@@ -1,4 +1,4 @@
-name := "-template"
+name := "spritz"
 
 version := "0.1.0"
 
@@ -19,6 +19,7 @@ scalacOptions ++= Seq(
   "-language:postfixOps",
   "-language:implicitConversions",
   "-language:existentials",
+  "-language:dynamics",
 )
 
 organization := "io.github.spritzsn"
@@ -36,6 +37,19 @@ licenses := Seq("ISC" -> url("https://opensource.org/licenses/ISC"))
 homepage := Some(url("https://github.com/edadma/" + name.value))
 
 //libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.13" % "test"
+
+libraryDependencies ++= Seq(
+  "org.scala-lang.modules" %%% "scala-parser-combinators" % "2.1.1",
+)
+
+libraryDependencies ++= Seq(
+//  "com.lihaoyi" %%% "pprint" % "0.7.2", /*% "test"*/
+  "io.github.cquiroz" % "scala-java-time_native0.4_3" % "2.4.0",
+)
+
+libraryDependencies ++= Seq(
+  "io.github.spritzsn" %%% "async" % "0.1.0.pre.2",
+)
 
 publishMavenStyle := true
 
