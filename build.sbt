@@ -48,7 +48,7 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "io.github.spritzsn" %%% "async" % "0.1.0.pre.2",
+  "io.github.spritzsn" %%% "async" % "0.1.0.pre.3",
 )
 
 publishMavenStyle := true

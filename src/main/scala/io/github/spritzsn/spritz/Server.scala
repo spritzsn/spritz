@@ -18,16 +18,33 @@ object Server extends Router:
       HandlerResult.Found(Future { () })
     }
 
+  def connectionCallback(server: TCP, status: Int): Unit =
+    val client = defaultLoop.tcp
+
+    def readCallback(client: TCP, size: Int, buf: Buffer): Unit =
+//      client.write(
+//        s"""HTTP/1.0 200 OK\r
+//           |Content-Type: text/plain\r
+//           |Content-Length: 12\r
+//           |\r
+//           |hello world
+//           |""".stripMargin.getBytes,
+//      )
+      client.readStop
+      client.shutdown(_.close(_ => ()))
+
+    client.readStart(readCallback)
+
+    server accept client
+  end connectionCallback
+
   def listen(port: Int, serverName: String = null, flags: Int = 0, backlog: Int = 4096): Unit =
     if serverName ne null then _serverName = Some(serverName)
 
-    checkError(uv_ip4_addr(c"0.0.0.0", port, socketAddress), "uv_ip4_addr")
+    val server = loop.tcp
 
-    val server: TCPHandle = malloc(uv_handle_size(UV_TCP_T)).asInstanceOf[TCPHandle]
-
-    checkError(uv_tcp_init(loop, server), "uv_tcp_init(server)")
-    checkError(uv_tcp_bind(server, socketAddress, flags), "uv_tcp_bind")
-    checkError(uv_listen(server, backlog, onConnectionCB), "uv_tcp_listen")
+    server.bind("0.0.0.0", port, flags)
+    server.listen(backlog, connectionCallback)
 
   protected class Connection:
     val parser = new RequestParser
