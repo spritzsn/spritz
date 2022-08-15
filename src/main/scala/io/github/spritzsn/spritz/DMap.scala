@@ -21,3 +21,12 @@ class DMap(val m: mutable.HashMap[String, Any] = new mutable.HashMap) extends mu
   def selectDynamic(field: String): Any = m(field)
 
   def updateDynamic(field: String)(value: Any): Unit = m(field) = value
+
+  private def render(a: Any): String =
+    a match
+      case s: String               => s"\"$a\""
+      case m: collection.Map[_, _] => (m map { case (k, v) => s"${render(k)}: ${render(v)}" }).mkString("{", ", ", "}")
+      case s: collection.Seq[_]    => s.map(render).mkString("[", ", ", "]")
+      case _                       => String.valueOf(a)
+
+  override def toString: String = render(m)
