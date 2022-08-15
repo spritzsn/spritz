@@ -32,25 +32,22 @@ class Router extends MiddlewareHandler:
     (buf.toString.r, groups.toSeq)
 
   protected def endpoint(method: Method, path: String, handler: EndpointHandler): Router =
-    endpointAsync(method, path, (req, res) => Future(handler(req, res)))
-
-  protected def endpointAsync(method: Method, path: String, handler: AsyncEndpointHandler): Router =
     val (pathr, params) = regex(path)
 
-    routes += Route.EndpointAsync(method, pathr, params, handler)
+    routes += Route.Endpoint(method, pathr, params, handler)
     this
 
-  def get(path: String, handler: AsyncEndpointHandler): Router = endpointAsync("GET", path, handler)
+  def get(path: String, handler: EndpointHandler): Router = endpoint("GET", path, handler)
 
-//  def getAsync(path: String, handler: AsyncEndpointHandler): Router = endpointAsync("GET", path, handler)
+//  def getAsync(path: String, handler: EndpointHandler): Router = endpointAsync("GET", path, handler)
 
-  def post(path: String, handler: AsyncEndpointHandler): Router = endpointAsync("POST", path, handler)
+  def post(path: String, handler: EndpointHandler): Router = endpoint("POST", path, handler)
 
-  def put(path: String, handler: AsyncEndpointHandler): Router = endpointAsync("PUT", path, handler)
+  def put(path: String, handler: EndpointHandler): Router = endpoint("PUT", path, handler)
 
-  def delete(path: String, handler: AsyncEndpointHandler): Router = endpointAsync("DELETE", path, handler)
+  def delete(path: String, handler: EndpointHandler): Router = endpoint("DELETE", path, handler)
 
-  def patch(path: String, handler: AsyncEndpointHandler): Router = endpointAsync("PATCH", path, handler)
+  def patch(path: String, handler: EndpointHandler): Router = endpoint("PATCH", path, handler)
 
   def use(path: String, middleware: MiddlewareHandler): Router =
     val (pathr, params) = regex(path)
@@ -70,7 +67,7 @@ class Router extends MiddlewareHandler:
   def apply(req: Request, res: Response): HandlerResult =
     for route <- routes do
       route match
-        case Route.EndpointAsync(method, path, params, handler) =>
+        case Route.Endpoint(method, path, params, handler) =>
           if method == req.method then
             path.findPrefixMatchOf(req.rest) match
               case Some(m) if m.end == req.rest.length =>

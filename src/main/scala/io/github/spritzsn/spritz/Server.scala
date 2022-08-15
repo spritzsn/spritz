@@ -89,7 +89,8 @@ object Server extends Router:
       )
 
     apply(req, res) match
-      case HandlerResult.Found(f)   => f.map(_ => res)
-      case HandlerResult.Next       => sys.error("HandlerResult.Next") // todo
-      case HandlerResult.Error(err) => sys.error(s"HandlerResult.Error($err)") // todo
+      case HandlerResult.Found(f: Future[_]) => f.map(_ => res)
+      case HandlerResult.Found(_)            => Future(res)
+      case HandlerResult.Next                => sys.error("HandlerResult.Next") // todo
+      case HandlerResult.Error(err)          => sys.error(s"HandlerResult.Error($err)") // todo
   end process
