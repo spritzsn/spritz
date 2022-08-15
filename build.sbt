@@ -1,6 +1,6 @@
 name := "spritz"
 
-version := "0.1.0-pre.6"
+version := "0.1.0-pre.7"
 
 scalaVersion := "3.1.3"
 
@@ -48,7 +48,7 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "io.github.spritzsn" %%% "async" % "0.1.0-pre.8",
+  "io.github.spritzsn" %%% "async" % "0.1.0-pre.9",
 )
 
 publishMavenStyle := true
