@@ -4,6 +4,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 import scala.util.matching.Regex
+import io.github.spritzsn.async._
 
 class Router extends MiddlewareHandler:
 
