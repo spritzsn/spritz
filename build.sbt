@@ -1,6 +1,6 @@
 name := "spritz"
 
-version := "0.1.0-pre.2"
+version := "0.1.0-pre.3"
 
 scalaVersion := "3.1.3"
 

@@ -3,9 +3,11 @@ package io.github.spritzsn.spritz
 import scala.collection.mutable
 
 object DMap extends Dynamic:
-  def applyDynamicNamed(name: String)(mapping: (String, Any)*): DMap = new DMap(mutable.HashMap(mapping: _*))
+  def applyDynamicNamed(name: String)(mapping: (String, Any)*): DMap = new DMap(mutable.LinkedHashMap(mapping: _*))
 
-class DMap(val m: mutable.HashMap[String, Any] = new mutable.HashMap) extends mutable.Map[String, Any] with Dynamic:
+class DMap(val m: mutable.LinkedHashMap[String, Any] = new mutable.LinkedHashMap)
+    extends mutable.Map[String, Any]
+    with Dynamic:
   def addOne(elem: (String, Any)): DMap.this.type =
     m addOne elem
     this
