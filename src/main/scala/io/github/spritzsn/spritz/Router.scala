@@ -39,8 +39,6 @@ class Router extends MiddlewareHandler:
 
   def get(path: String, handler: EndpointHandler): Router = endpoint("GET", path, handler)
 
-//  def getAsync(path: String, handler: EndpointHandler): Router = endpointAsync("GET", path, handler)
-
   def post(path: String, handler: EndpointHandler): Router = endpoint("POST", path, handler)
 
   def put(path: String, handler: EndpointHandler): Router = endpoint("PUT", path, handler)
