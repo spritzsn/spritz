@@ -34,7 +34,7 @@ class Response(serverName: Option[String], zoneId: ZoneId = ZoneId.of("GMT")):
     this
 
   def send(obj: Any): Response =
-    val s = String.valueOf(obj)
+    val s = String.valueOf(obj).trim
 
     setIfNot("Content-Type") {
       if s startsWith "<" then "text/html; charset=UTF-8" else "text/plain; charset=UTF-8"

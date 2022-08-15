@@ -15,7 +15,20 @@ object Server extends Router:
   def apply(routing: Server.type => Unit): Unit =
     routing(this)
     use { (req, res) =>
-      res.status(404).send(s"no matching routes for path '${req.path}'")
+      res
+        .status(404)
+        .send(s"""
+           |<!DOCTYPE html>
+           |<html>
+           |  <head>
+           |    <title>404 Not Found</title>
+           |  </head>
+           |  <body>
+           |    <h1>404 Not Found</h1>
+           |    <p>no matching routes for path '<code>${req.path}</code>'</p>
+           |  </body>
+           |</html>
+           |""".stripMargin)
       HandlerResult.Found(Future { () })
     }
     async.loop.run()
