@@ -37,7 +37,7 @@ class Router extends MiddlewareHandler:
   protected def endpointAsync(method: Method, path: String, handler: AsyncEndpointHandler): Router =
     val (pathr, params) = regex(path)
 
-    routes += Route.EndpointAsync(method, pathr, params, (req, res) => Future(handler(req, res)))
+    routes += Route.EndpointAsync(method, pathr, params, handler)
     this
 
   def get(path: String, handler: AsyncEndpointHandler): Router = endpointAsync("GET", path, handler)

@@ -7,7 +7,7 @@ import io.github.spritzsn.async._
 
 @main def run(): Unit =
   Server { app =>
-//    app.use("/eta", route.ETA)
+    app.get("/", (req, res) => async { res.send("hello world") })
     app.listen(3000)
     println("listening")
   }
