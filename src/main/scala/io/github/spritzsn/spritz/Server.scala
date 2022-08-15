@@ -5,7 +5,7 @@ import scala.collection.{immutable, mutable}
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import io.github.spritzsn.libuv._
-import io.github.spritzsn.async._
+import io.github.spritzsn.async
 
 object Server extends Router:
   val loop: Loop = defaultLoop
@@ -18,6 +18,7 @@ object Server extends Router:
       res.status(404).send(s"no matching routes for path '${req.path}'")
       HandlerResult.Found(Future { () })
     }
+    async.loop.run()
 
   def connectionCallback(server: TCP, status: Int): Unit =
     val client = defaultLoop.tcp
@@ -28,7 +29,9 @@ object Server extends Router:
         client.readStop
         client.shutdown(_.close(_ => ()))
 
-      if size < 0 then end()
+      if size < 0 then
+        // todo: check UV_EOF
+        end()
       else
         Try(for i <- 0 until size do parser send buf(i)) match
           case Failure(exception) =>
@@ -45,12 +48,10 @@ object Server extends Router:
                 case e: Exception =>
                   respond(new Response(_serverName).sendStatus(500), client)
                   end()
-
-      buf.dispose()
     end readCallback
 
-    client.readStart(readCallback)
     server accept client
+    client.readStart(readCallback)
   end connectionCallback
 
   def respond(res: Response, client: TCP): Unit = client.write(res.responseArray)
