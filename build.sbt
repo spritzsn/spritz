@@ -1,6 +1,6 @@
 name := "spritz"
 
-version := "0.1.0-pre.7"
+version := "0.1.0-pre.8"
 
 scalaVersion := "3.1.3"
 
@@ -24,7 +24,7 @@ scalacOptions ++= Seq(
 
 organization := "io.github.spritzsn"
 
-githubOwner := "edadma"
+githubOwner := "spritzsn"
 
 githubRepository := name.value
 
