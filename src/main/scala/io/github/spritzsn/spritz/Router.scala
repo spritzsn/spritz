@@ -66,11 +66,15 @@ class Router extends MiddlewareHandler:
     for route <- routes do
       route match
         case Route.Endpoint(method, path, params, handler) =>
-          if method == req.method then
+          if method == req.method || req.method == "HEAD" && method == "GET" then
             path.findPrefixMatchOf(req.rest) match
               case Some(m) if m.end == req.rest.length =>
                 routeMatch(req, params, m)
-                return HandlerResult.Found(handler(req, res))
+
+                val ret = handler(req, res)
+
+                if req.method == "HEAD" then res.body = Array()
+                return HandlerResult.Found(ret)
               case _ =>
         case Route.PathRoutes(path, params, handler) =>
           path.findPrefixMatchOf(req.rest) match
