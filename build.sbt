@@ -1,6 +1,8 @@
 name := "spritz"
 
-version := "0.1.0-pre.8"
+version := "0.1.0-pre.7"
+
+versionScheme := Some("early-semver")
 
 scalaVersion := "3.1.3"
 
