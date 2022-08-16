@@ -1,6 +1,6 @@
 name := "spritz"
 
-version := "0.1.0-pre.7"
+version := "0.1.0"
 
 versionScheme := Some("early-semver")
 
@@ -50,7 +50,8 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "io.github.spritzsn" %%% "async" % "0.1.0-pre.9",
+  "io.github.spritzsn" %%% "libuv" % "0.1.0",
+  "io.github.spritzsn" %%% "async" % "0.1.0",
 )
 
 publishMavenStyle := true

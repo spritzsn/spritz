@@ -40,7 +40,7 @@ object Server extends Router:
     def readCallback(client: TCP, size: Int, buf: Buffer): Unit =
       def end(): Unit =
         client.readStop
-        client.shutdown(_.close(_ => ()))
+        client.shutdown(_.close(_ => ())) // todo: shutdown and close don't need to call app callbacks
 
       if size < 0 then
         // todo: check UV_EOF
@@ -52,15 +52,23 @@ object Server extends Router:
             end()
           case Success(_) =>
             if parser.isDone then
-              try
-                process(parser, client) foreach { res =>
-                  respond(res, client)
-                  end()
-                }
-              catch
-                case e: Exception =>
-                  respond(new Response(_serverName).sendStatus(500), client)
-                  end()
+              process(parser, client) onComplete {
+                case Success(res) =>
+                  println(res)
+                  println(io.github.spritzsn.libuv.extern.uv_is_writable())
+                  try
+                    respond(res, client)
+                    end()
+                  catch
+                    case e: Exception =>
+                      println(("catch", e.getMessage))
+                      sys.exit(1)
+                      respond(new Response(_serverName).sendStatus(500), client)
+                      end()
+                case Failure(exception) =>
+                  println(exception.getMessage)
+                  sys.exit(1)
+              }
     end readCallback
 
     server accept client
