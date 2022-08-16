@@ -23,7 +23,7 @@ import io.github.spritzsn.async._
       "/",
       (req, res) =>
         async {
-          res.send(await(spawn("/home/ed/dev-sn/test/target/scala-3.1.3/test-out", Vector("3", "4"))))
+          res.send("hello" /*await(spawn("/home/ed/dev-sn/test/target/scala-3.1.3/test-out", Vector("3", "4")))*/ )
         },
     )
     app.post("/", (req, res) => res.send(req.body))

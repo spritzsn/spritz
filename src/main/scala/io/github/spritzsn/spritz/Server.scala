@@ -38,36 +38,19 @@ object Server extends Router:
     val parser = new RequestParser
 
     def readCallback(client: TCP, size: Int, buf: Buffer): Unit =
-      def end(): Unit =
-        client.readStop
-        client.shutdown(_.close(_ => ())) // todo: shutdown and close don't need to call app callbacks
-
       if size < 0 then
-        // todo: check UV_EOF
-        end()
-      else
+        client.readStop
+        if size != eof then println(s"error in read callback: ${errName(size)}: ${strError(size)}")
+      else if size > 0 then
         Try(for i <- 0 until size do parser send buf(i)) match
-          case Failure(exception) =>
-            respond(new Response(_serverName).status(400).send(exception.getMessage), client)
-            end()
+          case Failure(exception) => respond(new Response(_serverName).status(400).send(exception.getMessage), client)
           case Success(_) =>
             if parser.isDone then
               process(parser, client) onComplete {
                 case Success(res) =>
-                  println(res)
-                  println(io.github.spritzsn.libuv.extern.uv_is_writable())
-                  try
-                    respond(res, client)
-                    end()
-                  catch
-                    case e: Exception =>
-                      println(("catch", e.getMessage))
-                      sys.exit(1)
-                      respond(new Response(_serverName).sendStatus(500), client)
-                      end()
-                case Failure(exception) =>
-                  println(exception.getMessage)
-                  sys.exit(1)
+                  try respond(res, client)
+                  catch case e: Exception => respond(new Response(_serverName).sendStatus(500), client)
+                case Failure(exception) => respond(new Response(_serverName).sendStatus(500), client)
               }
     end readCallback
 
@@ -75,7 +58,14 @@ object Server extends Router:
     client.readStart(readCallback)
   end connectionCallback
 
-  def respond(res: Response, client: TCP): Unit = client.write(res.responseArray)
+  def respond(res: Response, client: TCP): Unit =
+    client.readStop
+
+    if client.isWritable then
+      client.write(res.responseArray)
+      client.shutdown(_.close()) // todo: shutdown and close don't need to call app callbacks
+    else if client.isClosing then client.dispose()
+    else client.close()
 
   def listen(port: Int, serverName: String = null, flags: Int = 0, backlog: Int = 4096): Unit =
     if serverName ne null then _serverName = Some(serverName)
