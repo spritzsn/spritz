@@ -40,22 +40,22 @@ object Server extends Router:
     def readCallback(client: TCP, size: Int, buf: Buffer): Unit =
       if size < 0 then
         client.readStop
-        if size != eof then println(s"error in read callback: ${errName(size)}: ${strError(size)}")
+        if size != eof then println(s"error in read callback: ${errName(size)}: ${strError(size)}") // todo
       else if size > 0 then
         Try(for i <- 0 until size do parser send buf(i)) match
-          case Failure(exception) => respond(new Response(_serverName).status(400).send(exception.getMessage), client)
+          case Failure(e) => respond(new Response(_serverName).status(400).send(e.getMessage), client)
           case Success(_) =>
             if parser.isDone then
               process(parser, client) onComplete {
                 case Success(res) =>
                   try respond(res, client)
-                  catch case e: Exception => respond(new Response(_serverName).sendStatus(500), client)
-                case Failure(exception) => respond(new Response(_serverName).sendStatus(500), client)
+                  catch case e: Exception => respond(new Response(_serverName).status(500).send(e.getMessage), client)
+                case Failure(e) => respond(new Response(_serverName).status(500).send(e.getMessage), client)
               }
     end readCallback
 
     server accept client
-    client.readStart(readCallback)
+    client readStart readCallback
   end connectionCallback
 
   def respond(res: Response, client: TCP): Unit =
@@ -63,7 +63,7 @@ object Server extends Router:
 
     if client.isWritable then
       client.write(res.responseArray)
-      client.shutdown(_.close()) // todo: shutdown and close don't need to call app callbacks
+      client.shutdown(_.close())
     else if client.isClosing then client.dispose()
     else client.close()
 
@@ -86,9 +86,10 @@ object Server extends Router:
         httpreq.body.toArray,
       )
 
-    apply(req, res) match
+    Future(apply(req, res)) flatMap {
       case HandlerResult.Found(f: Future[_]) => f.map(_ => res)
       case HandlerResult.Found(_)            => Future(res)
       case HandlerResult.Next                => sys.error("HandlerResult.Next") // todo
       case HandlerResult.Error(err)          => sys.error(s"HandlerResult.Error($err)") // todo
+    }
   end process
