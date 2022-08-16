@@ -29,7 +29,7 @@ object Server extends Router:
            |  </body>
            |</html>
            |""".stripMargin)
-      HandlerResult.Found(Future { () })
+      HandlerResult.Found(())
     }
     async.loop.run()
 
@@ -42,16 +42,17 @@ object Server extends Router:
         client.readStop
         if size != eof then println(s"error in read callback: ${errName(size)}: ${strError(size)}") // todo
       else if size > 0 then
-        Try(for i <- 0 until size do parser send buf(i)) match
-          case Failure(e) => respond(new Response(_serverName).status(400).send(e.getMessage), client)
-          case Success(_) =>
-            if parser.isDone then
-              process(parser, client) onComplete {
-                case Success(res) =>
-                  try respond(res, client)
-                  catch case e: Exception => respond(new Response(_serverName).status(500).send(e.getMessage), client)
-                case Failure(e) => respond(new Response(_serverName).status(500).send(e.getMessage), client)
-              }
+        try
+          for i <- 0 until size do parser send buf(i)
+
+          if parser.isDone then
+            process(parser, client) onComplete {
+              case Success(res) =>
+                try respond(res, client)
+                catch case e: Exception => respond(new Response(_serverName).status(500).send(e.getMessage), client)
+              case Failure(e) => respond(new Response(_serverName).status(500).send(e.getMessage), client)
+            }
+        catch case e: Exception => respond(new Response(_serverName).status(400).send(e.getMessage), client)
     end readCallback
 
     server accept client

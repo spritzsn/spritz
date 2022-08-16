@@ -1,11 +1,11 @@
-package io.github.spritzsn.spritz
-
-import cps.*
-import cps.monads.FutureAsyncMonad
-import scala.concurrent.duration.*
-import io.github.spritzsn.async._
-
-@main def run(): Unit =
+//package io.github.spritzsn.spritz
+//
+//import cps.*
+//import cps.monads.FutureAsyncMonad
+//import scala.concurrent.duration.*
+//import io.github.spritzsn.async._
+//
+//@main def run(): Unit =
 //  Server { app =>
 //    app.get("/", (req, res) => res.send("hello world"))
 //    app.listen(3000)
@@ -18,14 +18,8 @@ import io.github.spritzsn.async._
 //      await(Timer(.5 second))
 //  }
 
-  Server { app =>
-    app.get(
-      "/",
-      (req, res) =>
-        async {
-          res.send("hello")
-        },
-    )
-    app.listen(3000)
-    println("listening")
-  }
+//  Server { app =>
+//    app.get("/", (req, res) => res.send("hello"))
+//    app.listen(3000)
+//    println("listening")
+//  }
