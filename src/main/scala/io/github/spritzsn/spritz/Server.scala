@@ -29,7 +29,7 @@ object Server extends Router:
            |  </body>
            |</html>
            |""".stripMargin)
-      HandlerResult.Found(())
+      HandlerResult.Found(Future(res))
     }
     async.loop.run()
 
@@ -88,9 +88,8 @@ object Server extends Router:
       )
 
     Future(apply(req, res)) flatMap {
-      case HandlerResult.Found(f: Future[_]) => f.map(_ => res)
-      case HandlerResult.Found(_)            => Future(res)
-      case HandlerResult.Next                => sys.error("HandlerResult.Next") // todo
-      case HandlerResult.Error(err)          => sys.error(s"HandlerResult.Error($err)") // todo
+      case HandlerResult.Found(f)   => f
+      case HandlerResult.Next       => sys.error("HandlerResult.Next") // todo
+      case HandlerResult.Error(err) => sys.error(s"HandlerResult.Error($err)") // todo
     }
   end process

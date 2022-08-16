@@ -71,10 +71,12 @@ class Router extends MiddlewareHandler:
               case Some(m) if m.end == req.rest.length =>
                 routeMatch(req, params, m)
 
-                val ret = handler(req, res)
+                val ret =
+                  handler(req, res) match
+                    case f: Future[_] => f map (_ => res)
+                    case _            => Future(res)
 
-                if req.method == "HEAD" then res.body = Array()
-                return HandlerResult.Found(ret)
+                return HandlerResult.Found(ret andThen (_ => if req.method == "HEAD" then res.body = Array()))
               case _ =>
         case Route.PathRoutes(path, params, handler) =>
           path.findPrefixMatchOf(req.rest) match

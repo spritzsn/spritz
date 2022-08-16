@@ -15,6 +15,6 @@ enum Route:
   case Middleware(handler: MiddlewareHandler) extends Route
 
 enum HandlerResult:
-  case Found(result: Any) extends HandlerResult
+  case Found(f: Future[Response]) extends HandlerResult
   case Next extends HandlerResult
   case Error(error: Any) extends HandlerResult
