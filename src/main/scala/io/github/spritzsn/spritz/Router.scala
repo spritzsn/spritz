@@ -67,20 +67,24 @@ class Router extends RequestHandler2:
       var next = false
       var error: Option[Any] = None
 
-      def callHandler(handler: RequestHandler): HandlerReturnType =
+      def callHandler(handler: RequestHandler): HandlerResult =
         val result =
           handler match
-            case handler2: RequestHandler2 => handler2(req, res)
-            case handler3: RequestHandler3 =>
+            case handler2: ((_, _) => _) => handler2.asInstanceOf[RequestHandler2](req, res)
+            case handler3: ((_, _, _) => _) =>
               def nextFunction(err: Any): Unit =
                 if err != () then error = Some(err)
                 next = true
 
-              handler3(req, res, nextFunction)
+              handler3.asInstanceOf[RequestHandler3](req, res, nextFunction)
+            case handler4: ((_, _, _, _) => _) => sys.error("error handlers are not supported yet")
+
         result match
-          case f: Future[_]     => f map (_ => res)
-          case r: HandlerResult => r
-          case _                => Future(res)
+          case r: HandlerResult      => r
+          case f: Future[_] if !next => HandlerResult.Found(f map (_ => res))
+          case _ if !next            => HandlerResult.Found(Future(res))
+          case _ if error.isEmpty    => HandlerResult.Next
+          case _                     => HandlerResult.Error(error.get)
       end callHandler
 
       route match
