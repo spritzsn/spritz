@@ -89,7 +89,7 @@ object Server extends Router:
 
     Future(apply(req, res)) flatMap {
       case HandlerResult.Found(f)   => f
-      case HandlerResult.Next       => sys.error("HandlerResult.Next") // todo
+      case HandlerResult.Next       => sys.error("HandlerResult.Next")
       case HandlerResult.Error(err) => sys.error(s"HandlerResult.Error($err)") // todo
     }
   end process
