@@ -3,7 +3,7 @@ package io.github.spritzsn.spritz
 import java.time.format.DateTimeFormatter
 import java.time.{ZoneId, ZonedDateTime}
 import scala.collection.{immutable, mutable}
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.io.Codec
 
 class Response(serverName: Option[String], zoneId: ZoneId = ZoneId.of("GMT")):
@@ -11,7 +11,8 @@ class Response(serverName: Option[String], zoneId: ZoneId = ZoneId.of("GMT")):
   var statusMessage: String = "None"
   val headers = new mutable.LinkedHashMap[String, String]
   var body: Array[Byte] = Array()
-  val locals = new mutable.HashMap[String, Any]
+  val locals = new DMap
+  val actions = new ListBuffer[Response => Unit]
 
   def status(code: Int): Response =
     statusCode = Some(code)
@@ -41,8 +42,12 @@ class Response(serverName: Option[String], zoneId: ZoneId = ZoneId.of("GMT")):
     }
     send(Codec.toUTF8(s))
 
-  def setIfNot(key: String)(value: => String): Response =
-    if !(headers contains key) then headers(key) = value
+  def set(key: String, value: Any): Response =
+    headers(key) = String.valueOf(value)
+    this
+
+  def setIfNot(key: String)(value: => Any): Response =
+    if !(headers contains key) then set(key, value)
     this
 
   def responseArray: ArrayBuffer[Byte] =

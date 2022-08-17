@@ -63,6 +63,7 @@ object Server extends Router:
     client.readStop
 
     if client.isWritable then
+      res.actions foreach (_(res))
       client.write(res.responseArray)
       client.shutdown(_.close())
     else if client.isClosing then client.dispose()
