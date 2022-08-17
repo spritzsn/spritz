@@ -14,7 +14,7 @@ object Server extends Router:
 
   def apply(routing: Server.type => Unit): Unit =
     routing(this)
-    use { (req, res) =>
+    use { (req: Request, res: Response) =>
       res
         .status(404)
         .send(s"""
@@ -29,7 +29,6 @@ object Server extends Router:
            |  </body>
            |</html>
            |""".stripMargin)
-      HandlerResult.Found(Future(res))
     }
     async.loop.run()
 

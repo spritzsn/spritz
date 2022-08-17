@@ -6,7 +6,7 @@ import scala.concurrent.Future
 import scala.util.matching.Regex
 import io.github.spritzsn.async._
 
-class Router extends MiddlewareHandler:
+class Router extends RequestHandler2:
 
   private[spritz] val routes = new ListBuffer[Route]
 
@@ -31,29 +31,29 @@ class Router extends MiddlewareHandler:
 
     (buf.toString.r, groups.toSeq)
 
-  protected def endpoint(method: Method, path: String, handler: EndpointHandler): Router =
+  protected def endpoint(method: Method, path: String, handler: RequestHandler): Router =
     val (pathr, params) = regex(path)
 
     routes += Route.Endpoint(method, pathr, params, handler)
     this
 
-  def get(path: String, handler: EndpointHandler): Router = endpoint("GET", path, handler)
+  def get(path: String, handler: RequestHandler): Router = endpoint("GET", path, handler)
 
-  def post(path: String, handler: EndpointHandler): Router = endpoint("POST", path, handler)
+  def post(path: String, handler: RequestHandler): Router = endpoint("POST", path, handler)
 
-  def put(path: String, handler: EndpointHandler): Router = endpoint("PUT", path, handler)
+  def put(path: String, handler: RequestHandler): Router = endpoint("PUT", path, handler)
 
-  def delete(path: String, handler: EndpointHandler): Router = endpoint("DELETE", path, handler)
+  def delete(path: String, handler: RequestHandler): Router = endpoint("DELETE", path, handler)
 
-  def patch(path: String, handler: EndpointHandler): Router = endpoint("PATCH", path, handler)
+  def patch(path: String, handler: RequestHandler): Router = endpoint("PATCH", path, handler)
 
-  def use(path: String, middleware: MiddlewareHandler): Router =
+  def use(path: String, middleware: RequestHandler): Router =
     val (pathr, params) = regex(path)
 
-    routes += Route.PathRoutes(pathr, params, middleware)
+    routes += Route.Routes(pathr, params, middleware)
     this
 
-  def use(middleware: MiddlewareHandler): Router =
+  def use(middleware: RequestHandler): Router =
     routes += Route.Middleware(middleware)
     this
 
@@ -64,6 +64,25 @@ class Router extends MiddlewareHandler:
 
   def apply(req: Request, res: Response): HandlerResult =
     for route <- routes do
+      var next = false
+      var error: Option[Any] = None
+
+      def callHandler(handler: RequestHandler): HandlerReturnType =
+        val result =
+          handler match
+            case handler2: RequestHandler2 => handler2(req, res)
+            case handler3: RequestHandler3 =>
+              def nextFunction(err: Any): Unit =
+                if err != () then error = Some(err)
+                next = true
+
+              handler3(req, res, nextFunction)
+        result match
+          case f: Future[_]     => f map (_ => res)
+          case r: HandlerResult => r
+          case _                => Future(res)
+      end callHandler
+
       route match
         case Route.Endpoint(method, path, params, handler) =>
           if method == req.method || req.method == "HEAD" && method == "GET" then
@@ -71,27 +90,26 @@ class Router extends MiddlewareHandler:
               case Some(m) if m.end == req.rest.length =>
                 routeMatch(req, params, m)
 
-                val ret =
-                  handler(req, res) match
-                    case f: Future[_] => f map (_ => res)
-                    case _            => Future(res)
-
-                return HandlerResult.Found(ret andThen (_ => if req.method == "HEAD" then res.body = Array()))
+                callHandler(handler) match
+                  case HandlerResult.Found(f) =>
+                    return HandlerResult.Found(f andThen (_ => if req.method == "HEAD" then res.body = Array()))
+                  case HandlerResult.Next     =>
+                  case e: HandlerResult.Error => return e
               case _ =>
-        case Route.PathRoutes(path, params, handler) =>
+        case Route.Routes(path, params, handler) =>
           path.findPrefixMatchOf(req.rest) match
             case Some(m) =>
               routeMatch(req, params, m)
-              handler(req, res) match
-                case f: HandlerResult.Found   => return f
-                case HandlerResult.Next       =>
-                case HandlerResult.Error(err) => return HandlerResult.Error(err)
+              callHandler(handler) match
+                case f: HandlerResult.Found => return f
+                case HandlerResult.Next     =>
+                case e: HandlerResult.Error => return e
             case _ =>
         case Route.Middleware(handler) =>
-          handler(req, res) match
-            case f: HandlerResult.Found   => return f
-            case HandlerResult.Next       =>
-            case HandlerResult.Error(err) => return HandlerResult.Error(err)
+          callHandler(handler) match
+            case f: HandlerResult.Found => return f
+            case HandlerResult.Next     =>
+            case e: HandlerResult.Error => return e
     end for
 
     HandlerResult.Next

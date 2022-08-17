@@ -7,21 +7,21 @@ import scala.concurrent.duration.*
 import io.github.spritzsn.async.*
 import io.github.spritzsn.libuv.defaultLoop
 
-def responseTime(req: Request, res: Response): HandlerResult =
-  val start = System.nanoTime()
-
-  res.actions += (_.headers("X-Response-Time") = f"${(System.nanoTime() - start) / 1000 / 1000d}%.3fms")
-  HandlerResult.Next
-
-def cors(req: Request, res: Response): HandlerResult =
-  res.headers("Access-Control-Allow-Origin") = "*"
-  HandlerResult.Next
+//def responseTime(req: Request, res: Response): HandlerResult =
+//  val start = System.nanoTime()
+//
+//  res.actions += (_.headers("X-Response-Time") = f"${(System.nanoTime() - start) / 1000 / 1000d}%.3fms")
+//  HandlerResult.Next
+//
+//def cors(req: Request, res: Response): HandlerResult =
+//  res.headers("Access-Control-Allow-Origin") = "*"
+//  HandlerResult.Next
 
 @main def run(): Unit =
   Server { app =>
-    app use responseTime
-    app use cors
-    app.get("/", (req, res) => res.send("hello world"))
+//    app use responseTime
+//    app use cors
+    app.get("/", (req: Request, res: Response) => res.send("hello world"))
     app.listen(3000, "TestServer/1.0")
     println("listening")
   }
