@@ -13,9 +13,14 @@ def responseTime(req: Request, res: Response): HandlerResult =
   res.actions += (_.set("X-Response-Time", defaultLoop.now - start))
   HandlerResult.Next
 
+def cors(req: Request, res: Response): HandlerResult =
+  res.actions += (_.set("Access-Control-Allow-Origin", "*"))
+  HandlerResult.Next
+
 @main def run(): Unit =
   Server { app =>
     app use responseTime
+    app use cors
     app.get(
       "/",
       (req, res) =>
