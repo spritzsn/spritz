@@ -10,9 +10,12 @@ import io.github.spritzsn.async
 object Server extends Router:
   val loop: Loop = defaultLoop
 
-  var _serverName: Option[String] = None
-
-  def apply(routing: Server.type => Unit): Unit =
+  def apply(serverName: String = null)(routing: Server.type => Unit): Unit =
+    if serverName ne null then
+      use { (_: Request, res: Response) =>
+        res.setIfNot("Server")(serverName)
+        HandlerResult.Next
+      }
     routing(this)
     use { (req: Request, res: Response) =>
       res
@@ -48,10 +51,10 @@ object Server extends Router:
             process(parser) onComplete {
               case Success(res) =>
                 try respond(res, client)
-                catch case e: Exception => respond(new Response(_serverName).status(500).send(e.getMessage), client)
-              case Failure(e) => respond(new Response(_serverName).status(500).send(e.getMessage), client)
+                catch case e: Exception => respond(new Response().status(500).send(e.getMessage), client)
+              case Failure(e) => respond(new Response().status(500).send(e.getMessage), client)
             }
-        catch case e: Exception => respond(new Response(_serverName).status(400).send(e.getMessage), client)
+        catch case e: Exception => respond(new Response().status(400).send(e.getMessage), client)
     end readCallback
 
     server accept client
@@ -62,22 +65,19 @@ object Server extends Router:
     client.readStop
 
     if client.isWritable then
-      res.actions foreach (_(res))
       client.write(res.responseArray)
       client.shutdown(_.close())
     else if client.isClosing then client.dispose()
     else client.close()
 
-  def listen(port: Int, serverName: String = null, flags: Int = 0, backlog: Int = 4096): Unit =
-    if serverName ne null then _serverName = Some(serverName)
-
+  def listen(port: Int, flags: Int = 0, backlog: Int = 4096): Unit =
     val server = loop.tcp
 
     server.bind("0.0.0.0", port, flags)
     server.listen(backlog, connectionCallback)
 
   def process(httpreq: RequestParser): Future[Response] =
-    val res = new Response(_serverName)
+    val res = new Response()
     val req =
       new Request(
         httpreq.requestLine.head.asInstanceOf[Method],

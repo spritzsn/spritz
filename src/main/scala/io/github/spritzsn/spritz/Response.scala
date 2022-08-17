@@ -6,13 +6,15 @@ import scala.collection.{immutable, mutable}
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.io.Codec
 
-class Response(serverName: Option[String], zoneId: ZoneId = ZoneId.of("GMT")):
+class Response(zoneId: ZoneId = ZoneId.of("GMT")):
   var statusCode: Option[Int] = None
   var statusMessage: String = "None"
   val headers = new mutable.LinkedHashMap[String, String]
   var body: Array[Byte] = Array()
   val locals = new DMap
-  val actions = new ListBuffer[Response => Unit]
+  private val actions = new ListBuffer[Response => Unit]
+
+  def action(f: Response => Unit): Unit = actions += f
 
   def status(code: Int): Response =
     statusCode = Some(code)
@@ -51,8 +53,8 @@ class Response(serverName: Option[String], zoneId: ZoneId = ZoneId.of("GMT")):
     this
 
   def responseArray: ArrayBuffer[Byte] =
-    serverName foreach (n => setIfNot("Server") { n })
     setIfNot("Date") { DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(zoneId)) }
+    actions foreach (_(this))
 
     val buf = new ArrayBuffer[Byte]
 
