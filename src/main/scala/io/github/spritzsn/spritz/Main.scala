@@ -8,9 +8,9 @@ import io.github.spritzsn.async.*
 import io.github.spritzsn.libuv.defaultLoop
 
 def responseTime(req: Request, res: Response): HandlerResult =
-  val start = defaultLoop.now
+  val start = System.nanoTime()
 
-  res.actions += (_.set("X-Response-Time", defaultLoop.now - start))
+  res.actions += (_.headers("X-Response-Time") = f"${(System.nanoTime() - start) / 1000 / 1000d}%.3fms")
   HandlerResult.Next
 
 def cors(req: Request, res: Response): HandlerResult =
@@ -21,14 +21,7 @@ def cors(req: Request, res: Response): HandlerResult =
   Server { app =>
     app use responseTime
     app use cors
-    app.get(
-      "/",
-      (req, res) =>
-        async {
-          await(timer(.5 second))
-          res.send("hello world") /*status(HTTP.`No Content`)*/
-        },
-    )
+    app.get("/", (req, res) => res.send("hello world"))
     app.listen(3000, "TestServer/1.0")
     println("listening")
   }
