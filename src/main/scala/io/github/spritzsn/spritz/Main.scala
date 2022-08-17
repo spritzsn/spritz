@@ -14,7 +14,7 @@ def responseTime(req: Request, res: Response): HandlerResult =
   HandlerResult.Next
 
 def cors(req: Request, res: Response): HandlerResult =
-  res.actions += (_.set("Access-Control-Allow-Origin", "*"))
+  res.headers("Access-Control-Allow-Origin") = "*"
   HandlerResult.Next
 
 @main def run(): Unit =
