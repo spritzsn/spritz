@@ -1,5 +1,6 @@
 package io.github.spritzsn
 
+import io.github.spritzsn.libuv.hrTime
 import io.github.spritzsn.async.EventLoop
 
 package object spritz:
@@ -7,9 +8,9 @@ package object spritz:
 
   def responseTime(): RequestHandler =
     (req: Request, res: Response) =>
-      val start = System.nanoTime()
+      val start = hrTime
 
-      res.action(_.headers("X-Response-Time") = f"${(System.nanoTime() - start) / 1000 / 1000d}%.3fms")
+      res.action(_.headers("X-Response-Time") = f"${(hrTime - start) / 1000 / 1000d}%.3fms")
       HandlerResult.Next
 
   def cors(): RequestHandler =
