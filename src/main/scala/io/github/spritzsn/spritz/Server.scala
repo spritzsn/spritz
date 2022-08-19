@@ -47,7 +47,7 @@ object Server extends Router:
         try
           for i <- 0 until size do parser send buf(i)
 
-          if parser.isDone then
+          if parser.isFinal then
             process(parser) onComplete {
               case Success(res) =>
                 try respond(res, client)

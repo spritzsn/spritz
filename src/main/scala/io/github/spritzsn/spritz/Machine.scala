@@ -3,16 +3,17 @@ package io.github.spritzsn.spritz
 abstract class Machine:
   val start: State
 
-  case object NOT_STARTED extends State { def on = { case _ => } }
-  case object DONE extends State { def on = { case _ => } }
+  class PseudoState extends State { def on = _ => () }
+
+  case object INITIAL extends PseudoState
+  case object FINAL extends PseudoState
 
   var received: Int = 0
-  var started = false
-  var state: State = NOT_STARTED
+  var state: State = INITIAL
   var idx: Int = 0
   var trace = false
 
-  def isDone: Boolean = state == DONE
+  def isFinal: Boolean = state == FINAL
 
   var pushedback: Int = 0
   var full = false
@@ -42,12 +43,10 @@ abstract class Machine:
       if trace then
         println(s"$state <- $a (${if a == '\r' then "\\r" else if a == '\n' then "\\n" else a.toChar.toString})")
 
+      if !state.on.isDefinedAt(a) then sys.error(s"state $state not defined at value $a")
       state on a
 
-    if !started then
-      started = true
-      transition(start)
-
+    if state == INITIAL then transition(start)
     received += 1
     send(a)
 
