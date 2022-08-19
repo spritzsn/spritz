@@ -80,11 +80,11 @@ class Router extends RequestHandler2:
             case handler4: ((_, _, _, _) => _) => sys.error("error handlers are not supported yet")
 
         result match
-          case r: HandlerResult      => r
+          case r: HandlerResult      => r // todo: async?
           case f: Future[_] if !next => HandlerResult.Found(f map (_ => res))
-          case _ if !next            => HandlerResult.Found(Future(res))
-          case _ if error.isEmpty    => HandlerResult.Next
-          case _                     => HandlerResult.Error(error.get)
+          case _ if !next => HandlerResult.Found(Future(res)) // todo: there should be a synchronous result type as well
+          case _ if error.isEmpty => HandlerResult.Next
+          case _                  => HandlerResult.Error(error.get)
       end callHandler
 
       route match
