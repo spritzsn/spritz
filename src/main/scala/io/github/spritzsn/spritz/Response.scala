@@ -37,10 +37,11 @@ class Response(zoneId: ZoneId = ZoneId.of("GMT")):
     this
 
   def send(obj: Any): Response =
-    val s = String.valueOf(obj).trim
+    val s = String.valueOf(obj)
 
     setIfNot("Content-Type") {
-      if s startsWith "<" then "text/html; charset=UTF-8" else "text/plain; charset=UTF-8"
+      if s.trim startsWith "<" then "text/html; charset=UTF-8" // todo: should be s.stripLeading not s.trim
+      else "text/plain; charset=UTF-8"
     }
     send(Codec.toUTF8(s))
 

@@ -2,7 +2,7 @@ package io.github.spritzsn.spritz
 
 import scala.collection.mutable
 
-object DMap extends Dynamic:
+object DMap extends Dynamic: // todo: should map to strings for params and Any or something else for body
   def applyDynamicNamed(name: String)(mapping: (String, Any)*): DMap = new DMap(mutable.LinkedHashMap(mapping: _*))
 
 class DMap(val m: mutable.LinkedHashMap[String, Any] = new mutable.LinkedHashMap)
