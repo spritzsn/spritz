@@ -58,7 +58,7 @@ class Router extends RequestHandler2:
     this
 
   protected def routeMatch(req: Request, params: Seq[String], m: Regex.Match): Unit =
-    params foreach (k => req.params(k) = Util.urlDecode(m.group(k)))
+    params foreach (k => req.params(k) = urlDecode(m.group(k)))
     req.route ++= req.rest.substring(0, m.end)
     req.rest = req.rest.substring(m.end)
 

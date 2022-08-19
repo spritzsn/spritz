@@ -1,19 +1,7 @@
-package io.github.spritzsn
+package io.github.spritzsn.spritz
 
-import io.github.spritzsn.libuv.hrTime
 import io.github.spritzsn.async.EventLoop
 
-package object spritz:
-  implicit val loop: EventLoop.type = EventLoop
+import scala.concurrent.ExecutionContext
 
-  def responseTime(): RequestHandler =
-    (req: Request, res: Response) =>
-      val start = hrTime
-
-      res.action(_.headers("X-Response-Time") = f"${(hrTime - start) / 1000 / 1000d}%.3fms")
-      HandlerResult.Next
-
-  def cors(): RequestHandler =
-    (req: Request, res: Response) =>
-      res.headers("Access-Control-Allow-Origin") = "*"
-      HandlerResult.Next
+implicit val loop: ExecutionContext = EventLoop
