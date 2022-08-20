@@ -31,7 +31,7 @@ abstract class Machine:
 
   def transition(next: State): Unit =
     if trace then println(s"$state => $next")
-    if state != null then state.exit()
+    state.exit()
     goto(next)
 
   def directTransition(next: State): Unit =
