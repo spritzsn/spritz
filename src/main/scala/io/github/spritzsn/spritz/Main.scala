@@ -5,7 +5,7 @@
 //
 //import scala.concurrent.duration.*
 //import io.github.spritzsn.async.*
-//import io.github.spritzsn.libuv.defaultLoop
+//import io.github.spritzsn.libuv.{defaultLoop, hrTime}
 //
 //import scala.io.Codec
 //
