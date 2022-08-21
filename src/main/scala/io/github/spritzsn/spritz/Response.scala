@@ -32,10 +32,10 @@ class Response(zoneId: ZoneId = ZoneId.of("GMT")):
     this
 
   def send(data: Array[Byte]): Response =
-    setIfNot("Content-Type") { "application/octet-stream" }
+    setIfNot("Content-Type")("application/octet-stream")
     body = data
     statusIfNone(200)
-    headers("Content-Length") = body.length.toString
+    set("Content-Length", body.length.toString)
     this
 
   def send(obj: Any): Response =
