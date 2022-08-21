@@ -55,7 +55,15 @@ class Response(zoneId: ZoneId = ZoneId.of("GMT")):
 
   def responseArray: ArrayBuffer[Byte] =
     setIfNot("Date") { DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(zoneId)) }
-    actions foreach (_(this))
+    actions foreach { action =>
+      try action(this)
+      catch
+        case e: Exception =>
+          val res = new Response(zoneId)
+
+          res.status(500).send(s"exception in middleware action: ${e.getMessage}")
+          return res.responseArray
+    }
 
     val buf = new ArrayBuffer[Byte]
 
