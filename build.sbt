@@ -1,6 +1,6 @@
 name := "spritz"
 
-version := "0.0.17"
+version := "0.0.18"
 
 versionScheme := Some("early-semver")
 
@@ -50,7 +50,7 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "io.github.spritzsn" %%% "libuv" % "0.0.9",
+  "io.github.spritzsn" %%% "libuv" % "0.0.10",
   "io.github.spritzsn" %%% "async" % "0.0.8",
 )
 
