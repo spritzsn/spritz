@@ -28,7 +28,7 @@ object Server extends Router:
            |  </head>
            |  <body>
            |    <h1>404 Not Found</h1>
-           |    <p>no matching routes for path '<code>${req.path}</code>'</p>
+           |    <p>no matching routes for path '<code>${req.originalPath}</code>'</p>
            |  </body>
            |</html>
            |""".stripMargin)
@@ -77,7 +77,6 @@ object Server extends Router:
     server.listen(backlog, connectionCallback)
 
   def process(httpreq: RequestParser): Future[Response] =
-    val res = new Response()
     val req =
       new Request(
         httpreq.requestLine.head.asInstanceOf[Method],
@@ -86,6 +85,7 @@ object Server extends Router:
         new DMap,
         httpreq.body.toArray,
       )
+    val res = new Response()
 
     Future(apply(req, res)) flatMap {
       case HandlerResult.Found(f)   => f
