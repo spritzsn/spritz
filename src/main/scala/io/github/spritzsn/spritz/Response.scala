@@ -9,7 +9,9 @@ import scala.io.Codec
 class Response(zoneId: ZoneId = ZoneId.of("GMT")):
   var statusCode: Option[Int] = None
   var statusMessage: String = "None"
-  val headers = new mutable.LinkedHashMap[String, String]
+  val headers =
+    new mutable.TreeMap[String, String]()(scala.math.Ordering.comparatorToOrdering(String.CASE_INSENSITIVE_ORDER))
+  val headersList = new ListBuffer[(String, String)]
   var body: Array[Byte] = Array()
   val locals = new DMap
   private val actions = new ListBuffer[Response => Unit]
@@ -46,7 +48,15 @@ class Response(zoneId: ZoneId = ZoneId.of("GMT")):
     send(Codec.toUTF8(s))
 
   def set(key: String, value: Any): Response =
-    headers(key) = String.valueOf(value)
+    val v = String.valueOf(value)
+
+    if headers contains key then
+      headersList.indexWhere { case (k, _) => k equalsIgnoreCase key } match
+        case -1  =>
+        case idx => headersList remove idx
+
+    headersList += key -> v
+    headers(key) = v
     this
 
   def setIfNot(key: String)(value: => Any): Response =
@@ -72,7 +82,7 @@ class Response(zoneId: ZoneId = ZoneId.of("GMT")):
     buf ++= s"HTTP/1.0 ${statusCode.getOrElse(500)} $statusMessage".getBytes
     eol
 
-    for (k, v) <- headers do
+    for (k, v) <- headersList do
       buf ++= s"$k: $v".getBytes
       eol
 
