@@ -6,7 +6,7 @@ import scala.collection.{immutable, mutable}
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.io.Codec
 
-class Response(headOnly: Boolean = false, zoneId: ZoneId = ZoneId.of("GMT")):
+class Response(headOnly: Boolean = false, val zoneId: ZoneId = ZoneId.of("GMT")):
   var statusCode: Option[Int] = None
   var statusMessage: String = "None"
   val headers =
