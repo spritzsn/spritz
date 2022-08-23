@@ -6,7 +6,7 @@ import scala.collection.{immutable, mutable}
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.io.Codec
 
-class Response(zoneId: ZoneId = ZoneId.of("GMT")):
+class Response(headOnly: Boolean = false, zoneId: ZoneId = ZoneId.of("GMT")):
   var statusCode: Option[Int] = None
   var statusMessage: String = "None"
   val headers =
@@ -69,7 +69,7 @@ class Response(zoneId: ZoneId = ZoneId.of("GMT")):
       try action()
       catch
         case e: Exception =>
-          val res = new Response(zoneId)
+          val res = new Response(false, zoneId)
 
           res.status(500).send(s"exception in middleware action: ${e.getMessage}")
           return res.responseArray
@@ -87,7 +87,7 @@ class Response(zoneId: ZoneId = ZoneId.of("GMT")):
       eol
 
     eol
-    buf ++= body
+    if !headOnly then buf ++= body
     buf
 
   override def toString: String =

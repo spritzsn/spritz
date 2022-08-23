@@ -95,8 +95,7 @@ class Router extends RequestHandler2:
                 routeMatch(req, params, m)
 
                 callHandler(handler) match
-                  case HandlerResult.Found(f) =>
-                    return HandlerResult.Found(f andThen (_ => if req.method == "HEAD" then res.body = Array()))
+                  case f: HandlerResult.Found => return f
                   case HandlerResult.Next     =>
                   case e: HandlerResult.Error => return e
               case _ =>

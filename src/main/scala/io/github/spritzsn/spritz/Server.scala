@@ -85,7 +85,7 @@ object Server extends Router:
         new DMap,
         httpreq.body.toArray,
       )
-    val res = new Response()
+    val res = new Response(headOnly = req.method == "HEAD")
 
     Future(apply(req, res)) flatMap {
       case HandlerResult.Found(f)   => f
