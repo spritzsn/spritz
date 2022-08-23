@@ -14,9 +14,9 @@ class Response(zoneId: ZoneId = ZoneId.of("GMT")):
   val headersList = new ListBuffer[(String, String)]
   var body: Array[Byte] = Array()
   val locals = new DMap
-  private val actions = new ListBuffer[Response => Unit]
+  private val actions = new ListBuffer[() => Unit]
 
-  def action(f: Response => Unit): Unit = actions += f
+  def action(thunk: => Unit): Unit = actions += (() => thunk)
 
   def status(code: Int): Response =
     statusCode = Some(code)
@@ -66,7 +66,7 @@ class Response(zoneId: ZoneId = ZoneId.of("GMT")):
   def responseArray: ArrayBuffer[Byte] =
     setIfNot("Date") { DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(zoneId)) }
     actions foreach { action =>
-      try action(this)
+      try action()
       catch
         case e: Exception =>
           val res = new Response(zoneId)
