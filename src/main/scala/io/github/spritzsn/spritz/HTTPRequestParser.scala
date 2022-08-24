@@ -73,7 +73,7 @@ class HTTPRequestParser extends Machine:
       case ' ' => transition(versionState)
       case '&' =>
         url += '&'
-        transition(headerKeyState)
+        transition(queryKeyState)
       case '\r' | '=' | '\n' => badRequest
       case c =>
         url += '='
