@@ -1,14 +1,14 @@
 package io.github.spritzsn.spritz
 
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ListBuffer, ArrayBuffer}
 import scala.concurrent.Future
 import scala.util.matching.Regex
 import io.github.spritzsn.async._
 
 class Router extends RequestHandler2:
 
-  private[spritz] val routes = new ListBuffer[Route]
+  private[spritz] val routes = new ArrayBuffer[Route]
 
   private def regex(path: String): (Regex, Seq[String]) =
     val buf = new mutable.StringBuilder
