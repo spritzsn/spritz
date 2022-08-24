@@ -14,7 +14,7 @@ type RequestHandler = RequestHandler2 | RequestHandler3 | RequestHandler4
 type Method = "HEAD" | "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS"
 
 enum Route:
-  case Endpoint(method: Method, path: Regex, params: Seq[String], handler: RequestHandler) extends Route
+  case Endpoint(method: Method, path: Regex, params: Seq[String], handlers: Seq[RequestHandler]) extends Route
   case Routes(path: Regex, params: Seq[String], handler: RequestHandler) extends Route
   case Middleware(handler: RequestHandler) extends Route
 

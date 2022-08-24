@@ -31,21 +31,21 @@ class Router extends RequestHandler2:
 
     (buf.toString.r, groups.toSeq)
 
-  protected def endpoint(method: Method, path: String, handler: RequestHandler): Router =
+  protected def endpoint(method: Method, path: String, handler: Seq[RequestHandler]): Router =
     val (pathr, params) = regex(path)
 
     routes += Route.Endpoint(method, pathr, params, handler)
     this
 
-  def get(path: String, handler: RequestHandler): Router = endpoint("GET", path, handler)
+  def get(path: String, handler: RequestHandler*): Router = endpoint("GET", path, handler)
 
-  def post(path: String, handler: RequestHandler): Router = endpoint("POST", path, handler)
+  def post(path: String, handler: RequestHandler*): Router = endpoint("POST", path, handler)
 
-  def put(path: String, handler: RequestHandler): Router = endpoint("PUT", path, handler)
+  def put(path: String, handler: RequestHandler*): Router = endpoint("PUT", path, handler)
 
-  def delete(path: String, handler: RequestHandler): Router = endpoint("DELETE", path, handler)
+  def delete(path: String, handler: RequestHandler*): Router = endpoint("DELETE", path, handler)
 
-  def patch(path: String, handler: RequestHandler): Router = endpoint("PATCH", path, handler)
+  def patch(path: String, handler: RequestHandler*): Router = endpoint("PATCH", path, handler)
 
   def use(path: String, middleware: RequestHandler): Router =
     val (pathr, params) = regex(path)
@@ -88,16 +88,17 @@ class Router extends RequestHandler2:
       end callHandler
 
       route match
-        case Route.Endpoint(method, path, params, handler) =>
+        case Route.Endpoint(method, path, params, handlers) =>
           if method == req.method || req.method == "HEAD" && method == "GET" then
             path.findPrefixMatchOf(req.rest) match
               case Some(m) if m.end == req.rest.length =>
                 routeMatch(req, params, m)
 
-                callHandler(handler) match
-                  case f: HandlerResult.Found => return f
-                  case HandlerResult.Next     =>
-                  case e: HandlerResult.Error => return e
+                for h <- handlers do
+                  callHandler(h) match
+                    case f: HandlerResult.Found => return f
+                    case HandlerResult.Next     =>
+                    case e: HandlerResult.Error => return e
               case _ =>
         case Route.Routes(path, params, handler) =>
           path.findPrefixMatchOf(req.rest) match
