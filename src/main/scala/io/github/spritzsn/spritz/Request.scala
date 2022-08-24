@@ -5,6 +5,8 @@ import scala.collection.mutable
 class Request(
     val method: Method,
     val originalUrl: String,
+    val query: mutable.HashMap[String, String],
+    val version: String,
     val headers: mutable.Map[String, String],
     val params: DMap,
     val payload: Array[Byte],

@@ -38,7 +38,7 @@ object Server extends Router:
 
   private def connectionCallback(server: TCP, status: Int): Unit =
     val client = defaultLoop.tcp
-    val parser = new RequestParser
+    val parser = new HTTPRequestParser
 
     def readCallback(client: TCP, size: Int, buf: Buffer): Unit =
       if size < 0 then
@@ -81,11 +81,13 @@ object Server extends Router:
     server.bind("0.0.0.0", port, flags)
     server.listen(backlog, connectionCallback)
 
-  def process(httpreq: RequestParser): Future[Response] =
+  def process(httpreq: HTTPRequestParser): Future[Response] =
     val req =
       new Request(
-        httpreq.requestLine.head.asInstanceOf[Method],
-        httpreq.requestLine(1),
+        httpreq.method.asInstanceOf[Method],
+        httpreq.url.toString,
+        httpreq.query,
+        httpreq.version,
         httpreq.headers,
         new DMap,
         httpreq.body.toArray,
