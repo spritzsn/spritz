@@ -1,6 +1,6 @@
 name := "spritz"
 
-version := "0.0.28"
+version := "0.0.29"
 
 versionScheme := Some("early-semver")
 
