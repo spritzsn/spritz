@@ -42,9 +42,9 @@ class Response(headOnly: Boolean = false, val zoneId: ZoneId = ZoneId.of("GMT"))
 
   def typ(s: String): Response = setIfNot("Content-Type", if s contains "/" then s else contentType(s))
 
-  def json(data: Any): Response =
+  def json(data: Any, tab: Int = 0): Response =
     typ("application/json; charset=UTF-8")
-    body = DefaultJSONWriter.toString(data).getBytes
+    body = stringify(data, tab, tab > 0).getBytes
     statusIfNone(200)
     set("Content-Length", body.length)
     this
