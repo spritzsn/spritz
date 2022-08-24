@@ -85,6 +85,7 @@ object Server extends Router:
     val req =
       new Request(
         httpreq.method.asInstanceOf[Method],
+        httpreq.path,
         httpreq.url.toString,
         httpreq.query,
         httpreq.version,
