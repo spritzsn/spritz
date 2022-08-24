@@ -14,7 +14,7 @@ object Server extends Router:
   def apply(serverName: String = null)(routing: Server.type => Unit): Unit =
     if serverName ne null then
       use { (_: Request, res: Response) =>
-        res.setIfNot("Server")(serverName)
+        res.setIfNot("Server", serverName)
         HandlerResult.Next
       }
     routing(this)

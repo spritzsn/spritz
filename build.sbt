@@ -1,6 +1,6 @@
 name := "spritz"
 
-version := "0.0.26"
+version := "0.0.27"
 
 versionScheme := Some("early-semver")
 
@@ -47,6 +47,10 @@ libraryDependencies ++= Seq(
 libraryDependencies ++= Seq(
 //  "com.lihaoyi" %%% "pprint" % "0.7.2", /*% "test"*/
   "io.github.cquiroz" % "scala-java-time_native0.4_3" % "2.4.0",
+)
+
+libraryDependencies ++= Seq(
+  "io.github.edadma" %%% "json" % "0.1.13",
 )
 
 libraryDependencies ++= Seq(
