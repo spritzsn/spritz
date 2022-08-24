@@ -67,7 +67,8 @@ class HTTPRequestParser extends Machine:
     }
 
   case object queryValueState extends AccState:
-    override def exit(): Unit = query(key) = urlDecode(buf.toString)
+    override def exit(): Unit =
+      query(key) = urlDecode(buf.toString)
 
     val on = {
       case ' ' => transition(versionState)

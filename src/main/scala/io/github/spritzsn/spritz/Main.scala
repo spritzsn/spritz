@@ -5,7 +5,7 @@ package io.github.spritzsn.spritz
     app
       .get(
         "/",
-        (req: Request, res: Response) => res.json(req.query),
+        (req: Request, res: Response) => res.json(req.query, 2),
       )
     app.listen(3000)
     println("listening")

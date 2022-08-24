@@ -5,7 +5,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.io.Codec
 
 def urlDecode(s: String, codec: Codec = Codec.UTF8): String =
-  if s.indexOf('%') == -1 then s
+  if s.indexOf('%') == -1 && s.indexOf('+') == -1 then s
   else
     val bytes = new ArrayBuffer[Byte]
     var idx = 0
@@ -21,7 +21,8 @@ def urlDecode(s: String, codec: Codec = Codec.UTF8): String =
         case '%' =>
           bytes += ((hex(s(idx + 1)) << 4) + hex(s(idx + 2))).toByte
           idx += 2
-        case c => bytes += c.toByte
+        case '+' => bytes += ' '.toByte
+        case c   => bytes += c.toByte
 
       idx += 1
 
