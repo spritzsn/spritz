@@ -3,44 +3,94 @@ package io.github.spritzsn.spritz
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
-class RequestParser extends Machine:
+class HTTPRequestParser extends Machine:
   val start: State = methodState
 
-  val requestLine = new ListBuffer[String]
+  var method: String = null
+  val url = new StringBuilder
+  var path: String = null
+  var version: String = null
+  val query = new DMap
   val headers =
     new mutable.TreeMap[String, String]()(scala.math.Ordering.comparatorToOrdering(String.CASE_INSENSITIVE_ORDER))
   var key: String = _
   val buf = new StringBuilder
   val body = new ArrayBuffer[Byte]
 
-  def acc(b: Int): Unit = buf += b.toByte.toChar
-
   def badRequest: Nothing = sys.error("bad request")
 
   abstract class AccState extends State:
     override def enter(): Unit = buf.clear()
 
+    def acc(b: Int): Unit = buf += b.toChar
+
+  abstract class NonEmptyAccState extends AccState:
     override def exit(): Unit = if buf.isEmpty then badRequest
 
-  class RequestLineState(next: State) extends AccState:
+  case object methodState extends NonEmptyAccState:
     def on = {
       case ' ' =>
-        requestLine += buf.toString
-        transition(next)
+        method = buf.toString
+        transition(pathState)
       case '\r' | '\n' => badRequest
       case b           => acc(b)
+    }
+
+  case object pathState extends NonEmptyAccState:
+    def on = {
+      case ' ' =>
+        path = buf.toString
+        transition(versionState)
+      case '?' =>
+        path = buf.toString
+        url += '?'
+        transition(queryKeyState)
+      case '\r' | '\n' => badRequest
+      case b =>
+        url += b.toChar
+        acc(b)
+    }
+
+  case object queryKeyState extends AccState:
+    val on = {
+      case ' ' if buf.nonEmpty => badRequest
+      case ' '                 => transition(versionState)
+      case '=' if buf.isEmpty  => badRequest
+      case '=' =>
+        url += '='
+        key = urlDecode(buf.toString)
+        transition(queryValueState)
+      case '&' => badRequest
+      case c =>
+        url += c.toChar
+        acc(c)
+    }
+
+  case object queryValueState extends AccState:
+    override def exit(): Unit =
+      query(key) = urlDecode(buf.toString)
+
+    val on = {
+      case ' ' => transition(versionState)
+      case '&' =>
+        url += '&'
+        transition(queryKeyState)
+      case '\r' | '=' | '\n' => badRequest
+      case c =>
+        url += '='
+        acc(c)
     }
 
   case object versionState extends AccState:
     def on = {
       case '\r' =>
-        requestLine += buf.toString
+        version = buf.toString
         transition(value2keyState)
       case '\n' => badRequest
       case b    => acc(b)
     }
 
-  case object valueState extends AccState:
+  case object headerValueState extends AccState:
     def on = {
       case '\r' =>
         headers(key) = buf.toString
@@ -51,11 +101,11 @@ class RequestParser extends Machine:
 
   case object value2keyState extends State:
     def on = {
-      case '\n' => transition(keyState)
+      case '\n' => transition(headerKeyState)
       case _    => badRequest
     }
 
-  case object keyState extends AccState:
+  case object headerKeyState extends NonEmptyAccState:
     def on = {
       case '\r' if buf.nonEmpty => badRequest
       case '\r'                 => directTransition(blankState)
@@ -93,12 +143,9 @@ class RequestParser extends Machine:
       case '\r' | '\n' => badRequest
       case v =>
         pushback(v)
-        transition(valueState)
+        transition(headerValueState)
     }
 
-  case object methodState extends RequestLineState(pathState)
-  case object pathState extends RequestLineState(versionState)
-
   override def toString: String =
-    s"${super.toString}, request line: [$requestLine], headers: $headers, body: $body, length: ${body.length}"
-end RequestParser
+    s"${super.toString}, request line: [$method $url $version], headers: $headers, body: $body, length: ${body.length}"
+end HTTPRequestParser

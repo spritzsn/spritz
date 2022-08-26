@@ -6,6 +6,8 @@ import scala.collection.{immutable, mutable}
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.io.Codec
 
+import io.github.edadma.json.DefaultJSONWriter
+
 class Response(headOnly: Boolean = false, val zoneId: ZoneId = ZoneId.of("GMT")):
   var statusCode: Option[Int] = None
   var statusMessage: String = "None"
@@ -32,19 +34,28 @@ class Response(headOnly: Boolean = false, val zoneId: ZoneId = ZoneId.of("GMT"))
     this
 
   def send(data: Array[Byte]): Response =
-    setIfNot("Content-Type")("application/octet-stream")
+    typ("application/octet-stream")
     body = data
     statusIfNone(200)
-    set("Content-Length", body.length.toString)
+    set("Content-Length", body.length)
+    this
+
+  def typ(s: String): Response = setIfNot("Content-Type", if s contains "/" then s else contentType(s))
+
+  def json(data: Any, tab: Int = 0): Response =
+    typ("application/json; charset=UTF-8")
+    body = stringify(data, tab, tab > 0).getBytes
+    statusIfNone(200)
+    set("Content-Length", body.length)
     this
 
   def send(obj: Any): Response =
     val s = String.valueOf(obj)
 
-    setIfNot("Content-Type") {
+    typ(
       if s.trim startsWith "<" then "text/html; charset=UTF-8" // todo: should be s.stripLeading not s.trim
-      else "text/plain; charset=UTF-8"
-    }
+      else "text/plain; charset=UTF-8",
+    )
     send(Codec.toUTF8(s))
 
   def set(key: String, value: Any): Response =
@@ -59,12 +70,12 @@ class Response(headOnly: Boolean = false, val zoneId: ZoneId = ZoneId.of("GMT"))
     headers(key) = v
     this
 
-  def setIfNot(key: String)(value: => Any): Response =
+  def setIfNot(key: String, value: => Any): Response =
     if !(headers contains key) then set(key, value)
     this
 
   def responseArray: ArrayBuffer[Byte] =
-    setIfNot("Date") { DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(zoneId)) }
+    setIfNot("Date", DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(zoneId)))
     actions foreach { action =>
       try action()
       catch

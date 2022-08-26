@@ -8,12 +8,13 @@ import io.github.spritzsn.libuv._
 import io.github.spritzsn.async
 
 object Server extends Router:
-  val loop: Loop = defaultLoop
+  var exceptionHandler: (Response, Throwable) => Unit =
+    (req, ex) => req.status(500).send(s"exception '${ex.getClass}': ${ex.getMessage}")
 
   def apply(serverName: String = null)(routing: Server.type => Unit): Unit =
     if serverName ne null then
       use { (_: Request, res: Response) =>
-        res.setIfNot("Server")(serverName)
+        res.setIfNot("Server", serverName)
         HandlerResult.Next
       }
     routing(this)
@@ -35,9 +36,9 @@ object Server extends Router:
     }
     async.loop.run()
 
-  def connectionCallback(server: TCP, status: Int): Unit =
+  private def connectionCallback(server: TCP, status: Int): Unit =
     val client = defaultLoop.tcp
-    val parser = new RequestParser
+    val parser = new HTTPRequestParser
 
     def readCallback(client: TCP, size: Int, buf: Buffer): Unit =
       if size < 0 then
@@ -52,7 +53,11 @@ object Server extends Router:
               case Success(res) =>
                 try respond(res, client)
                 catch case e: Exception => respond(new Response().status(500).send(e.getMessage), client)
-              case Failure(e) => respond(new Response().status(500).send(e.getMessage), client)
+              case Failure(e) =>
+                val res = new Response()
+
+                exceptionHandler(res, e)
+                respond(res, client)
             }
         catch case e: Exception => respond(new Response().status(400).send(e.getMessage), client)
     end readCallback
@@ -71,16 +76,19 @@ object Server extends Router:
     else client.close()
 
   def listen(port: Int, flags: Int = 0, backlog: Int = 4096): Unit =
-    val server = loop.tcp
+    val server = defaultLoop.tcp
 
     server.bind("0.0.0.0", port, flags)
     server.listen(backlog, connectionCallback)
 
-  def process(httpreq: RequestParser): Future[Response] =
+  def process(httpreq: HTTPRequestParser): Future[Response] =
     val req =
       new Request(
-        httpreq.requestLine.head.asInstanceOf[Method],
-        httpreq.requestLine(1),
+        httpreq.method.asInstanceOf[Method],
+        httpreq.path,
+        httpreq.url.toString,
+        httpreq.query,
+        httpreq.version,
         httpreq.headers,
         new DMap,
         httpreq.body.toArray,
