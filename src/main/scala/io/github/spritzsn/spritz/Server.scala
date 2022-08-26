@@ -95,8 +95,8 @@ object Server extends Router:
       )
     val res = new Response(headOnly = req.method == "HEAD")
 
-    Future(apply(req, res)) flatMap {
-      case HandlerResult.Found(f)   => f
+    apply(req, res) map {
+      case HandlerResult.Responded  => res
       case HandlerResult.Next       => sys.error("HandlerResult.Next")
       case HandlerResult.Error(err) => sys.error(s"HandlerResult.Error($err)") // todo
     }
