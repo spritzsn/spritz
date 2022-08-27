@@ -86,7 +86,7 @@ class Router extends RequestHandler:
           case Route.Middleware(handler)      => return Some((i + 1, handler))
           case Route.Path(path, params, handler) =>
             path.findPrefixMatchOf(req.rest) match
-              case Some(m) if m.end == req.rest.length =>
+              case Some(m) =>
                 routeMatch(req, params, m)
                 return Some((i + 1, handler))
               case _ =>
