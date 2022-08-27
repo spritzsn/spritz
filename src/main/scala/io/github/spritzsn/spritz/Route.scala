@@ -6,10 +6,7 @@ import scala.util.matching.Regex
 type NextFunction = Any => Unit
 
 type HandlerReturnType = HandlerResult | Response | Unit | Future[HandlerResult | Response | Unit]
-type RequestHandler2 = (Request, Response) => HandlerReturnType
-type RequestHandler3 = (Request, Response, NextFunction) => HandlerReturnType
-type RequestHandler4 = (Request, Response, NextFunction, Any) => HandlerReturnType
-type RequestHandler = RequestHandler2 | RequestHandler3 | RequestHandler4
+type RequestHandler = (Request, Response) => HandlerReturnType
 
 type Method = "HEAD" | "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS"
 

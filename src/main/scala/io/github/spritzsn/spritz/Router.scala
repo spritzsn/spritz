@@ -6,8 +6,7 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.concurrent.Future
 import scala.util.matching.Regex
 
-class Router extends RequestHandler2:
-
+class Router extends RequestHandler:
   private[spritz] val routes = new ArrayBuffer[Route]
 
   private def regex(path: String): (Regex, Seq[String]) =
@@ -83,7 +82,7 @@ class Router extends RequestHandler2:
                   return Some((i + 1, handler))
                 case _ =>
           case Route.Same(handler) if matched => return Some((i + 1, handler))
-          case Route.Same(_)                  => sys.error("initial Same route")
+          case Route.Same(_)                  =>
           case Route.Middleware(handler)      => return Some((i + 1, handler))
           case Route.Path(path, params, handler) =>
             path.findPrefixMatchOf(req.rest) match
@@ -101,7 +100,7 @@ class Router extends RequestHandler2:
     def run(from: Int): Future[HandlerResult] =
       find(from) match
         case Some((idx, handler)) =>
-          handler.asInstanceOf[RequestHandler2](req, res) match
+          handler(req, res) match
             case HandlerResult.Next     => run(idx)
             case e: HandlerResult.Error => Future(e)
             case f: Future[_] =>
