@@ -9,7 +9,7 @@ import io.github.spritzsn.async
 
 object Server extends Router:
   var exceptionHandler: (Response, Throwable) => Unit =
-    (req, ex) => req.status(500).send(s"exception '${ex.getClass}': ${ex.getMessage}")
+    (res, ex) => res.status(500).send(s"exception '${ex.getClass}': ${ex.getMessage}")
 
   def apply(serverName: String = null)(routing: Server.type => Unit): Unit =
     if serverName ne null then
