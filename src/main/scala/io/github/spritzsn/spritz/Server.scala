@@ -52,7 +52,12 @@ object Server extends Router:
             process(parser) onComplete {
               case Success(res) =>
                 try respond(res, client)
-                catch case e: Exception => respond(new Response().status(500).send(e.getMessage), client)
+                catch
+                  case e: Exception =>
+                    respond(
+                      new Response().status(500).send(e.getMessage),
+                      client,
+                    ) // todo: should just drop the connection rather than call respond() again
               case Failure(e) =>
                 val res = new Response()
 
