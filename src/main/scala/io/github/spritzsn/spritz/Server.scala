@@ -69,8 +69,8 @@ object Server extends Router:
           catch case e: Exception => respond(new Response().status(400).send(e.getMessage), client)
       end readCallback
 
-      server accept client
-      client readStart readCallback
+      server accept client // according to docs (http://docs.libuv.org/en/v1.x/stream.html#c.uv_accept), this is guaranteed not to fail
+      client readStart readCallback // todo: http://docs.libuv.org/en/v1.x/stream.html#c.uv_read_start
     end if
   end connectionCallback
 
