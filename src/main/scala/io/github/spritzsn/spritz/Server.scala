@@ -37,38 +37,41 @@ object Server extends Router:
     async.loop.run()
 
   private def connectionCallback(server: TCP, status: Int): Unit =
-    val client = defaultLoop.tcp
-    val parser = new HTTPRequestParser
+    if status < 0 then Console.err.println(s"connection error: ${strError(status)}")
+    else
+      val client = defaultLoop.tcp
+      val parser = new HTTPRequestParser
 
-    def readCallback(client: TCP, size: Int, buf: Buffer): Unit =
-      if size < 0 then
-        client.readStop
-        if size != eof then println(s"error in read callback: ${errName(size)}: ${strError(size)}") // todo
-      else if size > 0 then
-        try
-          for i <- 0 until size do parser send buf(i)
+      def readCallback(client: TCP, size: Int, buf: Buffer): Unit =
+        if size < 0 then
+          client.readStop
+          if size != eof then println(s"error in read callback: ${errName(size)}: ${strError(size)}") // todo
+        else if size > 0 then
+          try
+            for i <- 0 until size do parser send buf(i)
 
-          if parser.isFinal then
-            process(parser) onComplete {
-              case Success(res) =>
-                try respond(res, client)
-                catch
-                  case e: Exception =>
-                    respond(
-                      new Response().status(500).send(e.getMessage),
-                      client,
-                    ) // todo: should just drop the connection rather than call respond() again
-              case Failure(e) =>
-                val res = new Response()
+            if parser.isFinal then
+              process(parser) onComplete {
+                case Success(res) =>
+                  try respond(res, client)
+                  catch
+                    case e: Exception =>
+                      respond(
+                        new Response().status(500).send(e.getMessage),
+                        client,
+                      ) // todo: should just drop the connection rather than call respond() again
+                case Failure(e) =>
+                  val res = new Response()
 
-                exceptionHandler(res, e)
-                respond(res, client)
-            }
-        catch case e: Exception => respond(new Response().status(400).send(e.getMessage), client)
-    end readCallback
+                  exceptionHandler(res, e)
+                  respond(res, client)
+              }
+          catch case e: Exception => respond(new Response().status(400).send(e.getMessage), client)
+      end readCallback
 
-    server accept client
-    client readStart readCallback
+      server accept client
+      client readStart readCallback
+    end if
   end connectionCallback
 
   def respond(res: Response, client: TCP): Unit =
