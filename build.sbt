@@ -1,10 +1,10 @@
 name := "spritz"
 
-version := "0.0.33"
+version := "0.0.35"
 
 versionScheme := Some("early-semver")
 
-scalaVersion := "3.1.3"
+scalaVersion := "3.2.0"
 
 enablePlugins(ScalaNativePlugin)
 
@@ -54,8 +54,8 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "io.github.spritzsn" %%% "libuv" % "0.0.22",
-  "io.github.spritzsn" %%% "async" % "0.0.9",
+  "io.github.spritzsn" %%% "libuv" % "0.0.24",
+  "io.github.spritzsn" %%% "async" % "0.0.11",
 )
 
 publishMavenStyle := true

@@ -51,7 +51,7 @@ object Server extends Router:
             for i <- 0 until size do parser send buf(i)
 
             if parser.isFinal then
-              process(parser) onComplete {
+              process(parser, client) onComplete {
                 case Success(res) =>
                   try respond(res, client)
                   catch
@@ -89,7 +89,7 @@ object Server extends Router:
     server.bind("0.0.0.0", port, flags)
     server.listen(backlog, connectionCallback)
 
-  def process(httpreq: HTTPRequestParser): Future[Response] =
+  def process(httpreq: HTTPRequestParser, client: TCP): Future[Response] =
     val req =
       new Request(
         httpreq.method.asInstanceOf[Method],
@@ -100,6 +100,8 @@ object Server extends Router:
         httpreq.headers,
         new DMap,
         httpreq.body.toArray,
+        client.getPeerName,
+        httpreq.headers.getOrElse("Host", ""),
       )
     val res = new Response(headOnly = req.method == "HEAD")
 

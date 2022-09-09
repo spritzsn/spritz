@@ -11,6 +11,8 @@ class Request(
     val headers: mutable.Map[String, String],
     val params: DMap,
     val payload: Array[Byte],
+    val ip: String,
+    val hostname: String,
 ):
   var body: DMap = null
   var route: String = ""
