@@ -16,7 +16,7 @@ class Response(headOnly: Boolean = false, val zoneId: ZoneId = ZoneId.of("GMT"))
   val headersList = new ListBuffer[(String, String)]
   var body: Array[Byte] = Array()
   val locals = new DMap
-  private val actions = new ListBuffer[() => Unit]
+  private val actions = new ArrayBuffer[() => Unit]
 
   def action(thunk: => Unit): Unit = actions += (() => thunk)
 
@@ -76,15 +76,19 @@ class Response(headOnly: Boolean = false, val zoneId: ZoneId = ZoneId.of("GMT"))
 
   def responseArray: ArrayBuffer[Byte] =
     setIfNot("Date", DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(zoneId)))
-    actions foreach { action =>
-      try action()
+
+    var i = 0
+
+    while i < actions.length do
+      try actions(i)()
       catch
         case e: Exception =>
           val res = new Response(false, zoneId)
 
           res.status(500).send(s"exception in middleware action: ${e.getMessage}")
           return res.responseArray
-    }
+
+      i += 1
 
     val buf = new ArrayBuffer[Byte]
 
