@@ -77,7 +77,7 @@ class HTTPRequestParser extends Machine:
         transition(queryKeyState)
       case '\r' | '=' | '\n' => badRequest
       case c =>
-        url += '='
+        url += c.toChar
         acc(c)
     }
 

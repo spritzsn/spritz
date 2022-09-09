@@ -10,7 +10,7 @@ import cps.monads.FutureAsyncMonad
       .use("/project", (req, res) => res.send("ok"))
       .get(
         "/",
-        (req, res) => { println(req); HandlerResult.Next },
+        (req, res) => async { println(req); HandlerResult.Next },
         (req, res) => async { res.json(req.query, 2) },
       )
       .get("/a", (req, res) => res.send("a route"))
