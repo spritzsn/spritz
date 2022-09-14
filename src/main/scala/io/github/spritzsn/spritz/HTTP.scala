@@ -13,6 +13,7 @@ object HTTP:
       203 -> "Non-Authoritative Information",
       204 -> "No Content",
       301 -> "Moved Permanently",
+      304 -> "Not Modified",
       400 -> "Bad Request",
       401 -> "Unauthorized",
       403 -> "Forbidden",
@@ -33,6 +34,7 @@ object HTTP:
   val `Non-Authoritative Information` = 203
   val `No Content` = 204
   val `Moved Permanently` = 301
+  val `Not Modified` = 304
   val `Bad Request` = 400
   val Unauthorized = 401
   val Forbidden = 403
