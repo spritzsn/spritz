@@ -18,5 +18,7 @@ class Request(
   var route: String = ""
   var rest: String = originalPath
 
+  def get(header: String): Option[String] = headers get header
+
   override def toString: String =
     s"$method $originalUrl headers=[${headers.mkString(", ")}] params=[${params.mkString(", ")}] body=$body"
