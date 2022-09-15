@@ -45,10 +45,17 @@ object Server extends Router:
       def readCallback(client: TCP, size: Int, buf: Buffer): Unit =
         if size < 0 then
           client.readStop
-          if size != eof then println(s"error in read callback: ${errName(size)}: ${strError(size)}") // todo
+
+          if size != eof then Console.err.println(s"error in read callback: ${errName(size)}: ${strError(size)}")
+
+          close(client)
         else if size > 0 then
           try
-            for i <- 0 until size do parser send buf(i)
+            var i = 0
+
+            while i < size do
+              parser send buf(i)
+              i += 1
 
             if parser.isFinal then
               process(parser, client) onComplete {
@@ -74,14 +81,15 @@ object Server extends Router:
     end if
   end connectionCallback
 
+  def close(client: TCP): Unit = if client.isClosing then client.dispose() else client.close()
+
   def respond(res: Response, client: TCP): Unit =
     client.readStop
 
     if client.isWritable then
       client.write(res.responseArray)
       client.shutdown(_.close())
-    else if client.isClosing then client.dispose()
-    else client.close()
+    else close(client)
 
   def listen(port: Int, flags: Int = 0, backlog: Int = 4096): Unit =
     val server = defaultLoop.tcp
