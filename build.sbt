@@ -54,7 +54,7 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "io.github.spritzsn" %%% "libuv" % "0.0.25",
+  "io.github.spritzsn" %%% "libuv" % "0.0.27",
   "io.github.spritzsn" %%% "async" % "0.0.13",
 )
 
