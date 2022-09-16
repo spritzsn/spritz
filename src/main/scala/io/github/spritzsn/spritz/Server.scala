@@ -60,20 +60,16 @@ object Server extends Router:
             if parser.isFinal then
               process(parser, client) onComplete {
                 case Success(res) =>
-                  try respond(res, client)
-                  catch
-                    case e: Exception =>
-                      respond(
-                        new Response().status(500).send(e.getMessage),
-                        client,
-                      ) // todo: should just drop the connection rather than call respond() again
+                  try respond(res, client, false)
+                  catch case _: Exception => close(client)
                 case Failure(e) =>
                   val res = new Response()
 
                   exceptionHandler(res, e)
-                  respond(res, client)
+                  respond(res, client, true)
               }
-          catch case e: Exception => respond(new Response().status(400).send(e.getMessage), client)
+              parser.reset()
+          catch case e: Exception => respond(new Response().status(400).send(e.getMessage), client, true)
       end readCallback
 
       server accept client // according to docs (http://docs.libuv.org/en/v1.x/stream.html#c.uv_accept), this is guaranteed not to fail
@@ -83,13 +79,13 @@ object Server extends Router:
 
   def close(client: TCP): Unit = if client.isClosing then client.dispose() else client.close()
 
-  def respond(res: Response, client: TCP): Unit =
-    client.readStop
+  def respond(res: Response, client: TCP, closeSocket: Boolean): Unit =
+    if closeSocket then client.readStop
 
     if client.isWritable then
       client.write(res.responseArray)
-      client.shutdown(_.close())
-    else close(client)
+      if closeSocket then client.shutdown(_.close())
+    else if closeSocket then close(client)
 
   def listen(port: Int, flags: Int = 0, backlog: Int = 4096): Unit =
     val server = defaultLoop.tcp

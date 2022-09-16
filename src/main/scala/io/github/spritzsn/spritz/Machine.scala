@@ -10,10 +10,14 @@ abstract class Machine:
 
   var received: Int = 0
   var state: State = INITIAL
-  var idx: Int = 0
   var trace = false
 
   def isFinal: Boolean = state == FINAL
+
+  def reset(): Unit =
+    state = INITIAL
+    full = false
+    received = 0
 
   var pushedback: Int = 0
   var full = false

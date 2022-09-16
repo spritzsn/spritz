@@ -17,6 +17,14 @@ class HTTPRequestParser extends Machine:
   val buf = new StringBuilder
   val body = new ArrayBuffer[Byte]
 
+  override def reset(): Unit =
+    headers.clear()
+    buf.clear()
+    body.clear()
+    query.clear()
+    url.clear()
+    super.reset()
+
   def badRequest: Nothing = sys.error("bad request")
 
   abstract class AccState extends State:
