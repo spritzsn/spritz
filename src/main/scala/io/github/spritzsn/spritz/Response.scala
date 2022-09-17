@@ -3,7 +3,7 @@ package io.github.spritzsn.spritz
 import java.time.format.DateTimeFormatter
 import java.time.{ZoneId, ZonedDateTime}
 import scala.collection.{immutable, mutable}
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.collection.mutable.ArrayBuffer
 import scala.io.Codec
 
 import io.github.edadma.json.DefaultJSONWriter
@@ -11,14 +11,16 @@ import io.github.edadma.json.DefaultJSONWriter
 class Response(headOnly: Boolean = false, val zoneId: ZoneId = ZoneId.of("GMT")):
   var statusCode: Option[Int] = None
   var statusMessage: String = "None"
-  val headers =
-    new mutable.TreeMap[String, String]()(scala.math.Ordering.comparatorToOrdering(String.CASE_INSENSITIVE_ORDER))
-  val headersList = new ListBuffer[(String, String)]
   var body: Array[Byte] = Array()
   val locals = new DMap
+  private val headers =
+    new mutable.TreeMap[String, String]()(scala.math.Ordering.comparatorToOrdering(String.CASE_INSENSITIVE_ORDER))
+  private val linkedHeaders = new mutable.LinkedHashMap[String, String]
   private val actions = new ArrayBuffer[() => Unit]
 
   def action(thunk: => Unit): Unit = actions += (() => thunk)
+
+  def get(header: String): Option[String] = headers get header
 
   def status(code: Int): Response =
     statusCode = Some(code)
@@ -44,7 +46,7 @@ class Response(headOnly: Boolean = false, val zoneId: ZoneId = ZoneId.of("GMT"))
 
   def json(data: Any, tab: Int = 0): Response =
     typ("application/json; charset=UTF-8")
-    body = stringify(data, tab, tab > 0).getBytes
+    body = stringify(data, tab, tab > 0).getBytes(Codec.UTF8.charSet)
     statusIfNone(200)
     set("Content-Length", body.length)
     this
@@ -53,7 +55,7 @@ class Response(headOnly: Boolean = false, val zoneId: ZoneId = ZoneId.of("GMT"))
     val s = String.valueOf(obj)
 
     typ(
-      if s.trim startsWith "<" then "text/html; charset=UTF-8" // todo: should be s.stripLeading not s.trim
+      if s.trim startsWith "<" then "text/html; charset=UTF-8"
       else "text/plain; charset=UTF-8",
     )
     send(Codec.toUTF8(s))
@@ -61,13 +63,8 @@ class Response(headOnly: Boolean = false, val zoneId: ZoneId = ZoneId.of("GMT"))
   def set(key: String, value: Any): Response =
     val v = String.valueOf(value)
 
-    if headers contains key then
-      headersList.indexWhere { case (k, _) => k equalsIgnoreCase key } match
-        case -1  =>
-        case idx => headersList remove idx
-
-    headersList += key -> v
     headers(key) = v
+    linkedHeaders(key) = v
     this
 
   def setIfNot(key: String, value: => Any): Response =
@@ -97,7 +94,7 @@ class Response(headOnly: Boolean = false, val zoneId: ZoneId = ZoneId.of("GMT"))
     buf ++= s"HTTP/1.1 ${statusCode.getOrElse(500)} $statusMessage".getBytes
     eol
 
-    for (k, v) <- headersList do
+    for (k, v) <- linkedHeaders do
       buf ++= s"$k: $v".getBytes
       eol
 
