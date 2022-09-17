@@ -39,7 +39,6 @@ object Server extends Router:
   private def connectionCallback(server: TCP, status: Int): Unit =
     if status < 0 then Console.err.println(s"connection error: ${strError(status)}")
     else
-      println("connection")
       val client = defaultLoop.tcp
       val parser = new HTTPRequestParser
 
@@ -49,7 +48,6 @@ object Server extends Router:
 
           if size != eof then Console.err.println(s"error in read callback: ${errName(size)}: ${strError(size)}")
 
-          println("close")
           close(client)
         else if size > 0 then
           try
