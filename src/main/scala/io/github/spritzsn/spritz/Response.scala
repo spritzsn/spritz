@@ -94,7 +94,7 @@ class Response(headOnly: Boolean = false, val zoneId: ZoneId = ZoneId.of("GMT"))
 
     def eol = buf ++= "\r\n".getBytes
 
-    buf ++= s"HTTP/1.0 ${statusCode.getOrElse(500)} $statusMessage".getBytes
+    buf ++= s"HTTP/1.1 ${statusCode.getOrElse(500)} $statusMessage".getBytes
     eol
 
     for (k, v) <- headersList do
