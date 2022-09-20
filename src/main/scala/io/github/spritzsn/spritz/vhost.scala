@@ -1,17 +1,22 @@
 package io.github.spritzsn.spritz
 
-def vhost(hostname: String, handler: RequestHandler): RequestHandler =
-  var end = 0
-  val buf = new StringBuilder
+import scala.util.matching.Regex
 
-  "\\*".r
-    .findAllMatchIn(hostname)
-    .foreach { m =>
-      buf ++= (if end < m.start then s"\\Q${hostname.substring(end, m.start)}\\E.+" else ".+")
-      end = m.end
-    }
-  if end < hostname.length then buf ++= s"\\Q${hostname.substring(end)}\\E"
+def vhost(hostname: String | Regex, handler: RequestHandler): RequestHandler =
+  val regex =
+    hostname match
+      case s: String =>
+        var end = 0
+        val buf = new StringBuilder
 
-  val regex = buf.toString.r
+        "\\*".r
+          .findAllMatchIn(s)
+          .foreach { m =>
+            buf ++= (if end < m.start then s"\\Q${s.substring(end, m.start)}\\E.+" else ".+")
+            end = m.end
+          }
+        if end < s.length then buf ++= s"\\Q${s.substring(end)}\\E"
+        buf.toString.r
+      case r: Regex => r
 
   (req, res) => if regex.matches(req.hostname) then handler(req, res) else HandlerResult.Next
