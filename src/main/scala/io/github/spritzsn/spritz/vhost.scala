@@ -7,10 +7,10 @@ def vhost(hostname: String, handler: RequestHandler): RequestHandler =
   "\\*".r
     .findAllMatchIn(hostname)
     .foreach { m =>
-      buf ++= (if end < m.start then s"\\Q${s.substring(end, m.start)}\\E.+" else ".+")
+      buf ++= (if end < m.start then s"\\Q${hostname.substring(end, m.start)}\\E.+" else ".+")
       end = m.end
     }
-  if end < hostname.length then buf ++= s"\\Q${s.substring(end)}\\E"
+  if end < hostname.length then buf ++= s"\\Q${hostname.substring(end)}\\E"
 
   val regex = buf.toString.r
 
