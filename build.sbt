@@ -1,10 +1,10 @@
 name := "spritz"
 
-version := "0.0.42"
+version := "0.0.43"
 
 versionScheme := Some("early-semver")
 
-scalaVersion := "3.2.0"
+scalaVersion := "3.2.1"
 
 enablePlugins(ScalaNativePlugin)
 
