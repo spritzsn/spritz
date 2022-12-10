@@ -1,10 +1,10 @@
 package io.github.spritzsn.spritz
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.collection.{immutable, mutable}
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-import io.github.spritzsn.libuv._
+import io.github.spritzsn.libuv.*
 import io.github.spritzsn.async
 
 object Server extends Router:
@@ -94,12 +94,25 @@ object Server extends Router:
     server.listen(backlog, connectionCallback)
 
   def process(httpreq: HTTPRequestParser, client: TCP): Future[Response] =
+    val query = new DMap
+
+    for (k, v) <- httpreq.query do
+      val (key, array) =
+        if k endsWith "[]" then (k dropRight 2, true)
+        else (k, false)
+
+      (query get key, array) match
+        case (None, false)                    => query(key) = v
+        case (None, true)                     => query(key) = ListBuffer(v)
+        case (Some(l: ListBuffer[String]), _) => query(key) = l += v
+        case (Some(cur), _)                   => query(key) = ListBuffer(cur, v)
+
     val req =
       new Request(
         httpreq.method.asInstanceOf[Method],
         httpreq.path,
         httpreq.url.toString,
-        httpreq.query,
+        query,
         httpreq.version,
         httpreq.headers,
         new DMap,

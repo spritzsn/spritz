@@ -10,7 +10,7 @@ class HTTPRequestParser extends Machine:
   val url = new StringBuilder
   var path: String = null
   var version: String = null
-  val query = new DMap
+  val query = new ListBuffer[(String, String)]
   val headers =
     new mutable.TreeMap[String, String]()(scala.math.Ordering.comparatorToOrdering(String.CASE_INSENSITIVE_ORDER))
   var key: String = _
@@ -76,7 +76,7 @@ class HTTPRequestParser extends Machine:
 
   case object queryValueState extends AccState:
     override def exit(): Unit =
-      query(key) = urlDecode(buf.toString)
+      query += (key -> urlDecode(buf.toString))
 
     val on = {
       case ' ' => transition(versionState)
