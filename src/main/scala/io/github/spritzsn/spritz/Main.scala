@@ -4,8 +4,8 @@ import cps.*
 import cps.monads.FutureAsyncMonad
 
 @main def run(): Unit =
-  Server("TestServer/1") { app =>
-    app.get("/", (req, res) => res.send("hello"))
-    app.listen(3000)
-    println("listening")
-  }
+  val app = Spritz("TestServer/1")
+
+  app.get("/", (_, res) => res.send("hello"))
+  println("listening no port 3000")
+  app.listen(3000)
