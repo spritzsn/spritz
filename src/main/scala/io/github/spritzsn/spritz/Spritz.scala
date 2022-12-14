@@ -7,17 +7,15 @@ import scala.util.{Failure, Success, Try}
 import io.github.spritzsn.libuv.*
 import io.github.spritzsn.async
 
-object Spritz extends Router:
+class Spritz(serverName: String = null) extends Router:
   var exceptionHandler: (Response, Throwable) => Unit =
     (res, ex) => res.status(500).send(s"exception '${ex.getClass}': ${ex.getMessage}")
 
-  def apply(serverName: String = null): Spritz.type =
-    if serverName ne null then
-      use { (_: Request, res: Response) =>
-        res.setIfNot("Server", serverName)
-        HandlerResult.Next
-      }
-    this
+  if serverName ne null then
+    use { (_: Request, res: Response) =>
+      res.setIfNot("Server", serverName)
+      HandlerResult.Next
+    }
 
   private def connectionCallback(server: TCP, status: Int): Unit =
     if status < 0 then Console.err.println(s"connection error: ${strError(status)}")
