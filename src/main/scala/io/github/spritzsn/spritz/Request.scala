@@ -1,6 +1,6 @@
 package io.github.spritzsn.spritz
 
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 
 class Request(
     val method: Method,
@@ -8,7 +8,7 @@ class Request(
     val originalUrl: String,
     val query: DMap,
     val version: String,
-    val headers: mutable.Map[String, String],
+    val headers: immutable.Map[String, String],
     val params: DMap,
     val payload: Array[Byte],
     val ip: String,

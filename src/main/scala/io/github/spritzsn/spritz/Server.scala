@@ -114,7 +114,10 @@ object Server extends Router:
         httpreq.url.toString,
         query,
         httpreq.version,
-        httpreq.headers,
+        new immutable.TreeMap[String, String]()(
+          scala.math.Ordering.comparatorToOrdering(String.CASE_INSENSITIVE_ORDER),
+        ) ++
+          httpreq.headers,
         new DMap,
         httpreq.body.toArray,
         client.getPeerName,
