@@ -67,7 +67,7 @@ class HTTPRequestParser extends Machine:
     def on = {
       case ' ' =>
         path = buf.toString
-        transition(versionState)
+        transition(versionHttpState)
       case '?' =>
         path = buf.toString
         urlAcc('?')
@@ -82,7 +82,7 @@ class HTTPRequestParser extends Machine:
   case object queryKeyState extends AccState(MaxHeaderKeyLen):
     val on = {
       case ' ' if buf.nonEmpty => badRequest
-      case ' '                 => transition(versionState)
+      case ' '                 => transition(versionHttpState)
       case '=' if buf.isEmpty  => badRequest
       case '=' =>
         urlAcc('=')
@@ -100,7 +100,7 @@ class HTTPRequestParser extends Machine:
       query += (key -> urlDecode(buf.toString))
 
     val on = {
-      case ' ' => transition(versionState)
+      case ' ' => transition(versionHttpState)
       case '&' =>
         urlAcc('&')
         transition(queryKeyState)
@@ -111,16 +111,54 @@ class HTTPRequestParser extends Machine:
         acc(c)
     }
 
-  case object versionState extends AccState(MaxVersionLen):
+  case object versionHttpState extends State:
+    private val expected = "HTTP/"
+    var pos: Int = 0
+
+    override def enter(): Unit =
+      buf.clear()
+      pos = 0
+
     def on = {
-      case '\r' =>
+      case b if pos < expected.length && b == expected.charAt(pos) =>
+        if buf.length >= MaxVersionLen then badRequest
+        buf += b.toChar
+        pos += 1
+        if pos == expected.length then transition(versionMajorState)
+      case _ => badRequest
+    }
+
+  case object versionMajorState extends State:
+    var hasDigit: Boolean = false
+
+    override def enter(): Unit = hasDigit = false
+
+    def on = {
+      case '.' if hasDigit =>
+        if buf.length >= MaxVersionLen then badRequest
+        buf += '.'
+        transition(versionMinorState)
+      case b if b >= '0' && b <= '9' =>
+        if buf.length >= MaxVersionLen then badRequest
+        buf += b.toChar
+        hasDigit = true
+      case _ => badRequest
+    }
+
+  case object versionMinorState extends State:
+    var hasDigit: Boolean = false
+
+    override def enter(): Unit = hasDigit = false
+
+    def on = {
+      case '\r' if hasDigit =>
         version = buf.toString
-        if !version.matches("HTTP/\\d+\\.\\d+") then badRequest
         transition(value2keyState)
-      case '\n' => badRequest
-      case b =>
-        if isControl(b) then badRequest
-        acc(b)
+      case b if b >= '0' && b <= '9' =>
+        if buf.length >= MaxVersionLen then badRequest
+        buf += b.toChar
+        hasDigit = true
+      case _ => badRequest
     }
 
   case object headerValueState extends AccState(MaxHeaderValueLen):
