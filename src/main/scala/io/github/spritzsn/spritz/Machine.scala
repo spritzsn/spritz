@@ -28,8 +28,9 @@ abstract class Machine:
     pushedback = a
 
   protected def goto(next: State): Unit =
+    val prev = state
     next.enter()
-    state = next
+    if state == prev then state = next
 
   def selfTransition(): Unit = transition(state)
 

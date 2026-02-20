@@ -5,6 +5,14 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.compiletime.uninitialized
 
 class HTTPRequestParser extends Machine:
+  private val MaxMethodLen = 16
+  private val MaxUrlLen = 8192
+  private val MaxVersionLen = 16
+  private val MaxHeaderKeyLen = 256
+  private val MaxHeaderValueLen = 8192
+  private val MaxHeaderCount = 100
+  private val MaxBodySize = 10 * 1024 * 1024 // 10 MB
+
   val start: State = methodState
 
   var method: String = null
@@ -28,15 +36,21 @@ class HTTPRequestParser extends Machine:
 
   def badRequest: Nothing = sys.error("bad request")
 
-  abstract class AccState extends State:
+  private def urlAcc(c: Int): Unit =
+    if url.length >= MaxUrlLen then badRequest
+    url += c.toChar
+
+  abstract class AccState(val maxLen: Int) extends State:
     override def enter(): Unit = buf.clear()
 
-    def acc(b: Int): Unit = buf += b.toChar
+    def acc(b: Int): Unit =
+      if buf.length >= maxLen then badRequest
+      buf += b.toChar
 
-  abstract class NonEmptyAccState extends AccState:
+  abstract class NonEmptyAccState(maxLen: Int) extends AccState(maxLen):
     override def exit(): Unit = if buf.isEmpty then badRequest
 
-  case object methodState extends NonEmptyAccState:
+  case object methodState extends NonEmptyAccState(MaxMethodLen):
     def on = {
       case ' ' =>
         method = buf.toString
@@ -45,52 +59,52 @@ class HTTPRequestParser extends Machine:
       case b           => acc(b)
     }
 
-  case object pathState extends NonEmptyAccState:
+  case object pathState extends NonEmptyAccState(MaxUrlLen):
     def on = {
       case ' ' =>
         path = buf.toString
         transition(versionState)
       case '?' =>
         path = buf.toString
-        url += '?'
+        urlAcc('?')
         transition(queryKeyState)
       case '\r' | '\n' => badRequest
       case b =>
-        url += b.toChar
+        urlAcc(b)
         acc(b)
     }
 
-  case object queryKeyState extends AccState:
+  case object queryKeyState extends AccState(MaxHeaderKeyLen):
     val on = {
       case ' ' if buf.nonEmpty => badRequest
       case ' '                 => transition(versionState)
       case '=' if buf.isEmpty  => badRequest
       case '=' =>
-        url += '='
+        urlAcc('=')
         key = urlDecode(buf.toString)
         transition(queryValueState)
       case '&' => badRequest
       case c =>
-        url += c.toChar
+        urlAcc(c)
         acc(c)
     }
 
-  case object queryValueState extends AccState:
+  case object queryValueState extends AccState(MaxHeaderValueLen):
     override def exit(): Unit =
       query += (key -> urlDecode(buf.toString))
 
     val on = {
       case ' ' => transition(versionState)
       case '&' =>
-        url += '&'
+        urlAcc('&')
         transition(queryKeyState)
       case '\r' | '=' | '\n' => badRequest
       case c =>
-        url += c.toChar
+        urlAcc(c)
         acc(c)
     }
 
-  case object versionState extends AccState:
+  case object versionState extends AccState(MaxVersionLen):
     def on = {
       case '\r' =>
         version = buf.toString
@@ -99,7 +113,7 @@ class HTTPRequestParser extends Machine:
       case b    => acc(b)
     }
 
-  case object headerValueState extends AccState:
+  case object headerValueState extends AccState(MaxHeaderValueLen):
     def on = {
       case '\r' =>
         headers(key) = buf.toString
@@ -114,11 +128,12 @@ class HTTPRequestParser extends Machine:
       case _    => badRequest
     }
 
-  case object headerKeyState extends NonEmptyAccState:
+  case object headerKeyState extends NonEmptyAccState(MaxHeaderKeyLen):
     def on = {
       case '\r' if buf.nonEmpty => badRequest
       case '\r'                 => directTransition(blankState)
       case ':' =>
+        if headers.size >= MaxHeaderCount then badRequest
         key = buf.toString
         transition(key2valueState)
       case '\n' => badRequest
@@ -136,8 +151,15 @@ class HTTPRequestParser extends Machine:
     var len: Int = 0
 
     override def enter(): Unit =
-      len = headers("Content-Length").toInt
+      val raw = headers("Content-Length").trim
+      if raw.isEmpty || !raw.forall(_.isDigit) then badRequest
 
+      val parsed =
+        try raw.toLong
+        catch case _: NumberFormatException => badRequest
+      if parsed < 0 || parsed > MaxBodySize then badRequest
+
+      len = parsed.toInt
       if len == 0 then transition(FINAL)
 
     def on = { case b =>
@@ -148,8 +170,11 @@ class HTTPRequestParser extends Machine:
 
   case object key2valueState extends State:
     def on = {
-      case ' '         =>
-      case '\r' | '\n' => badRequest
+      case ' '  =>
+      case '\n' => badRequest
+      case '\r' =>
+        headers(key) = ""
+        transition(value2keyState)
       case v =>
         pushback(v)
         transition(headerValueState)
