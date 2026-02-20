@@ -6,7 +6,6 @@ import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Codec
 
-import io.github.edadma.json.DefaultJSONWriter
 
 class Response(headOnly: Boolean = false, val zoneId: ZoneId = ZoneId.of("GMT")):
   var statusCode: Option[Int] = None
@@ -14,13 +13,13 @@ class Response(headOnly: Boolean = false, val zoneId: ZoneId = ZoneId.of("GMT"))
   var body: Array[Byte] = Array()
   val locals = new DMap
   private val headers =
-    new mutable.TreeMap[String, String]()(scala.math.Ordering.comparatorToOrdering(String.CASE_INSENSITIVE_ORDER))
+    new mutable.TreeMap[String, String]()(using Ordering.by(_.toLowerCase))
   private val linkedHeaders = new mutable.LinkedHashMap[String, String]
   private val actions = new ArrayBuffer[() => Unit]
 
   def action(thunk: => Unit): Unit = actions += (() => thunk)
 
-  def get(header: String): Option[String] = headers get header
+  def get(header: String): Option[String] = headers.get(header)
 
   def status(code: Int): Response =
     statusCode = Some(code)
@@ -42,7 +41,7 @@ class Response(headOnly: Boolean = false, val zoneId: ZoneId = ZoneId.of("GMT"))
     set("Content-Length", body.length)
     this
 
-  def typ(s: String): Response = setIfNot("Content-Type", if s contains "/" then s else contentType(s))
+  def typ(s: String): Response = setIfNot("Content-Type", if s.contains("/") then s else contentType(s))
 
   def json(data: Any, tab: Int = 0): Response =
     typ("application/json; charset=UTF-8")
@@ -55,7 +54,7 @@ class Response(headOnly: Boolean = false, val zoneId: ZoneId = ZoneId.of("GMT"))
     val s = String.valueOf(obj)
 
     typ(
-      if s.trim startsWith "<" then "text/html; charset=UTF-8"
+      if s.trim.startsWith("<") then "text/html; charset=UTF-8"
       else "text/plain; charset=UTF-8",
     )
     send(Codec.toUTF8(s))
@@ -68,7 +67,7 @@ class Response(headOnly: Boolean = false, val zoneId: ZoneId = ZoneId.of("GMT"))
     this
 
   def setIfNot(key: String, value: => Any): Response =
-    if !(headers contains key) then set(key, value)
+    if !(headers.contains(key)) then set(key, value)
     this
 
   def responseArray: ArrayBuffer[Byte] =

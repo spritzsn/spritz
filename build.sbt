@@ -1,18 +1,45 @@
+import xerial.sbt.Sonatype.sonatypeCentralHost
+
+ThisBuild / licenses               := Seq("ISC" -> url("https://opensource.org/licenses/ISC"))
+ThisBuild / versionScheme          := Some("semver-spec")
+ThisBuild / evictionErrorLevel     := Level.Warn
+ThisBuild / scalaVersion           := "3.8.1"
+ThisBuild / organization           := "io.github.edadma"
+ThisBuild / organizationName       := "edadma"
+ThisBuild / organizationHomepage   := Some(url("https://github.com/edadma"))
+ThisBuild / version                := "0.0.48"
+ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
+
+ThisBuild / publishConfiguration := publishConfiguration.value.withOverwrite(true).withChecksums(Vector.empty)
+ThisBuild / resolvers += Resolver.mavenLocal
+ThisBuild / resolvers += Resolver.sonatypeCentralSnapshots
+ThisBuild / resolvers += Resolver.sonatypeCentralRepo("releases")
+
+ThisBuild / sonatypeProfileName := "io.github.edadma"
+
+ThisBuild / scmInfo := Some(
+  ScmInfo(
+    url("https://github.com/edadma/spritz"),
+    "scm:git@github.com:edadma/spritz.git",
+  ),
+)
+ThisBuild / developers := List(
+  Developer(
+    id = "edadma",
+    name = "Edward A. Maxedon, Sr.",
+    email = "edadma@gmail.com",
+    url = url("https://github.com/edadma"),
+  ),
+)
+
+ThisBuild / homepage    := Some(url("https://github.com/edadma/spritz"))
+ThisBuild / description := "Express.js-style HTTP framework for Scala Native"
+
+ThisBuild / publishTo := sonatypePublishToBundle.value
+
 name := "spritz"
 
-version := "0.0.47"
-
-versionScheme := Some("early-semver")
-
-scalaVersion := "3.2.1"
-
 enablePlugins(ScalaNativePlugin)
-
-nativeLinkStubs := true
-
-nativeMode := "debug"
-
-nativeLinkingOptions := Seq(s"-L${baseDirectory.value}/native-lib")
 
 scalacOptions ++= Seq(
   "-deprecation",
@@ -24,39 +51,14 @@ scalacOptions ++= Seq(
   "-language:dynamics",
 )
 
-organization := "io.github.spritzsn"
-
-githubOwner := "spritzsn"
-
-githubRepository := name.value
-
-Global / onChangedBuildSource := ReloadOnSourceChanges
-
-resolvers += Resolver.githubPackages("edadma")
-
-licenses := Seq("ISC" -> url("https://opensource.org/licenses/ISC"))
-
-homepage := Some(url("https://github.com/edadma/" + name.value))
-
-//libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.13" % "test"
-
 libraryDependencies ++= Seq(
-  "org.scala-lang.modules" %%% "scala-parser-combinators" % "2.1.1",
+  "org.scala-lang.modules" %%% "scala-parser-combinators" % "2.4.0",
+  "io.github.cquiroz"     %%% "scala-java-time"          % "2.6.0",
+  "io.github.edadma"      %%% "libuv"                    % "0.0.28",
+  "io.github.edadma"      %%% "async"                    % "0.0.14",
 )
 
-libraryDependencies ++= Seq(
-//  "com.lihaoyi" %%% "pprint" % "0.7.2", /*% "test"*/
-  "io.github.cquiroz" % "scala-java-time_native0.4_3" % "2.5.0",
-)
-
-libraryDependencies ++= Seq(
-  "io.github.edadma" %%% "json" % "0.1.13",
-)
-
-libraryDependencies ++= Seq(
-  "io.github.spritzsn" %%% "libuv" % "0.0.27",
-  "io.github.spritzsn" %%% "async" % "0.0.13",
-)
+libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.19" % "test"
 
 publishMavenStyle := true
 

@@ -24,7 +24,7 @@ object RouteParser extends RegexParsers:
 
   def literal: Parser[RouteAST] = "[a-zA-Z0-9-_.]+".r ^^ RouteAST.Literal.apply
 
-  def parameter: Parser[RouteAST] = ":[a-zA-Z0-9]+".r ^^ (n => RouteAST.Parameter(n drop 1))
+  def parameter: Parser[RouteAST] = ":[a-zA-Z0-9]+".r ^^ (n => RouteAST.Parameter(n.drop(1)))
 
   def apply(input: scala.io.Source): RouteAST =
     parseAll(route, new PagedSeqReader(PagedSeq.fromSource(input))) match {

@@ -2,6 +2,7 @@ package io.github.spritzsn.spritz
 
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.compiletime.uninitialized
 
 class HTTPRequestParser extends Machine:
   val start: State = methodState
@@ -12,8 +13,8 @@ class HTTPRequestParser extends Machine:
   var version: String = null
   val query = new ListBuffer[(String, String)]
   val headers =
-    new mutable.TreeMap[String, String]()(scala.math.Ordering.comparatorToOrdering(String.CASE_INSENSITIVE_ORDER))
-  var key: String = _
+    new mutable.TreeMap[String, String]()(using Ordering.by(_.toLowerCase))
+  var key: String = uninitialized
   val buf = new StringBuilder
   val body = new ArrayBuffer[Byte]
 

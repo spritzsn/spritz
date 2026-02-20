@@ -53,13 +53,13 @@ def stringify(
 
   def jsonValue(value: Any): Unit =
     value match {
-      case d: Double if d.isWhole                                  => buf ++= "%.0f" format d
+      case d: Double if d.isWhole                                  => buf ++= "%.0f".format(d)
       case _: Number | _: java.math.BigDecimal | _: Boolean | null => buf ++= String.valueOf(value)
       case m: collection.Map[_, _]           => jsonObject(m.toSeq.asInstanceOf[Seq[(String, Any)]])
       case s: collection.Seq[_] if s.isEmpty => buf ++= "[]"
       case s: collection.Seq[_]              => aggregate('[', s, ']')(jsonValue)
       case a: Array[_]                       => jsonValue(a.toList)
-      case p: Product                        => jsonObject(p.productElementNames zip p.productIterator toList)
+      case p: Product                        => jsonObject(p.productElementNames.zip(p.productIterator).toList)
       case t: Instant => buf ++= '"' +: DateTimeFormatter.ISO_DATE_TIME.format(t.atOffset(ZoneOffset.UTC)) :+ '"'
       case _: String =>
         buf += '"'

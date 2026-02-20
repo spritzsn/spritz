@@ -3,21 +3,21 @@ package io.github.spritzsn.spritz
 import scala.collection.mutable
 
 object DMap extends Dynamic: // todo: should map to strings for params and Any or something else for body
-  def applyDynamicNamed(name: String)(mapping: (String, Any)*): DMap = new DMap(mutable.LinkedHashMap(mapping: _*))
+  def applyDynamicNamed(name: String)(mapping: (String, Any)*): DMap = new DMap(mutable.LinkedHashMap(mapping*))
 
 class DMap(val m: mutable.LinkedHashMap[String, Any] = new mutable.LinkedHashMap)
     extends mutable.Map[String, Any]
     with Dynamic:
   def addOne(elem: (String, Any)): DMap.this.type =
-    m addOne elem
+    m.addOne(elem)
     this
 
   def iterator: Iterator[(String, Any)] = m.iterator
 
-  def get(key: String): Option[Any] = m get key
+  def get(key: String): Option[Any] = m.get(key)
 
   def subtractOne(elem: String): DMap.this.type =
-    m subtractOne elem
+    m.subtractOne(elem)
     this
 
   def selectDynamic(field: String): Any = m(field)

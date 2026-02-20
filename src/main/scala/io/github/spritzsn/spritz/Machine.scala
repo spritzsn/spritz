@@ -48,7 +48,7 @@ abstract class Machine:
         println(s"$state <- $a (${if a == '\r' then "\\r" else if a == '\n' then "\\n" else a.toChar.toString})")
 
       if !state.on.isDefinedAt(a) then sys.error(s"state $state not defined at value $a")
-      state on a
+      state.on(a)
 
     if state == INITIAL then transition(start)
     received += 1

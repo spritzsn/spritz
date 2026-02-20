@@ -54,13 +54,13 @@ object Server extends Router:
             var i = 0
 
             while i < size do
-              parser send buf(i)
+              parser.send(buf(i))
               i += 1
 
             if parser.isFinal then
-              process(parser, client) onComplete {
+              process(parser, client).onComplete {
                 case Success(res) =>
-                  try respond(res, client, parser.version endsWith "/1.0")
+                  try respond(res, client, parser.version.endsWith("/1.0"))
                   catch case _: Exception => close(client)
                 case Failure(e) =>
                   val res = new Response()
@@ -72,8 +72,8 @@ object Server extends Router:
           catch case e: Exception => respond(new Response().status(400).send(e.getMessage), client, true)
       end readCallback
 
-      server accept client // according to docs (http://docs.libuv.org/en/v1.x/stream.html#c.uv_accept), this is guaranteed not to fail
-      client readStart readCallback // todo: http://docs.libuv.org/en/v1.x/stream.html#c.uv_read_start
+      server.accept(client)
+      client.readStart(readCallback)
     end if
   end connectionCallback
 
@@ -98,13 +98,13 @@ object Server extends Router:
 
     for (k, v) <- httpreq.query do
       val (key, array) =
-        if k endsWith "[]" then (k dropRight 2, true)
+        if k.endsWith("[]") then (k.dropRight(2), true)
         else (k, false)
 
-      (query get key, array) match
+      (query.get(key), array) match
         case (None, false)                    => query(key) = v
         case (None, true)                     => query(key) = ListBuffer(v)
-        case (Some(l: ListBuffer[String]), _) => query(key) = l += v
+        case (Some(l: ListBuffer[String] @unchecked), _) => query(key) = l += v
         case (Some(cur), _)                   => query(key) = ListBuffer(cur, v)
 
     val req =
@@ -114,9 +114,7 @@ object Server extends Router:
         httpreq.url.toString,
         query,
         httpreq.version,
-        new immutable.TreeMap[String, String]()(
-          scala.math.Ordering.comparatorToOrdering(String.CASE_INSENSITIVE_ORDER),
-        ) ++
+        new immutable.TreeMap[String, String]()(using Ordering.by(_.toLowerCase)) ++
           httpreq.headers,
         new DMap,
         httpreq.body.toArray,
@@ -125,7 +123,7 @@ object Server extends Router:
       )
     val res = new Response(headOnly = req.method == "HEAD")
 
-    apply(req, res) map {
+    apply(req, res).map {
       case HandlerResult.Responded  => res
       case HandlerResult.Next       => sys.error("HandlerResult.Next")
       case HandlerResult.Error(err) => sys.error(s"HandlerResult.Error($err)") // todo
