@@ -41,13 +41,14 @@ libraryDependencies += "io.github.edadma" %%% "spritz" % "0.0.48"
 import io.github.spritzsn.spritz.*
 
 @main def run(): Unit =
-  Server("MyApp") { app =>
-    app.get("/") { (req, res) =>
-      res.send("Hello, World!")
-    }
-    app.listen(3000)
-    println("Listening on port 3000")
+  val app = new Server("MyApp")
+
+  app.get("/") { (req, res) =>
+    res.send("Hello, World!")
   }
+  app.listen(3000)
+  println("Listening on port 3000")
+  app.run()
 ```
 
 ### JSON API
@@ -56,13 +57,14 @@ import io.github.spritzsn.spritz.*
 import io.github.spritzsn.spritz.*
 
 @main def run(): Unit =
-  Server() { app =>
-    app.get("/api/users/:id") { (req, res) =>
-      val id = req.params.selectDynamic("id")
-      res.json(Map("id" -> id, "name" -> "Alice"))
-    }
-    app.listen(3000)
+  val app = new Server()
+
+  app.get("/api/users/:id") { (req, res) =>
+    val id = req.params.selectDynamic("id")
+    res.json(Map("id" -> id, "name" -> "Alice"))
   }
+  app.listen(3000)
+  app.run()
 ```
 
 ### Middleware
@@ -71,17 +73,18 @@ import io.github.spritzsn.spritz.*
 import io.github.spritzsn.spritz.*
 
 @main def run(): Unit =
-  Server() { app =>
-    app.use(responseTime)
-    app.use { (req, res) =>
-      println(s"${req.method} ${req.originalPath}")
-      HandlerResult.Next
-    }
-    app.get("/") { (req, res) =>
-      res.send("Hello!")
-    }
-    app.listen(3000)
+  val app = new Server()
+
+  app.use(responseTime)
+  app.use { (req, res) =>
+    println(s"${req.method} ${req.originalPath}")
+    HandlerResult.Next
   }
+  app.get("/") { (req, res) =>
+    res.send("Hello!")
+  }
+  app.listen(3000)
+  app.run()
 ```
 
 ## Building

@@ -54,7 +54,7 @@ scalacOptions ++= Seq(
 libraryDependencies ++= Seq(
   "org.scala-lang.modules" %%% "scala-parser-combinators" % "2.4.0",
   "io.github.cquiroz"     %%% "scala-java-time"          % "2.6.0",
-  "io.github.edadma"      %%% "libuv"                    % "0.0.28",
+  "io.github.edadma"      %%% "libuv"                    % "0.0.29",
   "io.github.edadma"      %%% "async"                    % "0.0.14",
 )
 

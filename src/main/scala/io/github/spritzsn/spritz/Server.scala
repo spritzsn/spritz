@@ -7,17 +7,17 @@ import scala.util.{Failure, Success, Try}
 import io.github.spritzsn.libuv.*
 import io.github.spritzsn.async
 
-object Server extends Router:
+class Server(serverName: String = null) extends Router:
   var exceptionHandler: (Response, Throwable) => Unit =
     (res, ex) => res.status(500).send(s"exception '${ex.getClass}': ${ex.getMessage}")
 
-  def apply(serverName: String = null)(routing: Server.type => Unit): Unit =
-    if serverName ne null then
-      use { (_: Request, res: Response) =>
-        res.setIfNot("Server", serverName)
-        HandlerResult.Next
-      }
-    routing(this)
+  if serverName ne null then
+    use { (_: Request, res: Response) =>
+      res.setIfNot("Server", serverName)
+      HandlerResult.Next
+    }
+
+  def run(): Unit =
     use { (req: Request, res: Response) =>
       res
         .status(404)
