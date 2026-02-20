@@ -176,7 +176,7 @@ class HTTPRequestParserTests extends AnyFunSuite:
   }
 
   test("case-insensitive header lookup") {
-    val p = parse("GET / HTTP/1.1\r\nContent-Type: text/plain\r\n\r\n")
+    val p = parse("GET / HTTP/1.1\r\nHost: h\r\nContent-Type: text/plain\r\n\r\n")
     assert(p.isFinal)
     assert(p.headers("content-type") == "text/plain")
     assert(p.headers("CONTENT-TYPE") == "text/plain")
@@ -196,46 +196,46 @@ class HTTPRequestParserTests extends AnyFunSuite:
   }
 
   test("duplicate header overwrites") {
-    val p = parse("GET / HTTP/1.1\r\nX-Test: first\r\nX-Test: second\r\n\r\n")
+    val p = parse("GET / HTTP/1.1\r\nHost: h\r\nX-Test: first\r\nX-Test: second\r\n\r\n")
     assert(p.isFinal)
     assert(p.headers("X-Test") == "second")
   }
 
   test("many headers") {
     val headers = (1 to 20).map(i => s"X-Header-$i: value-$i").mkString("\r\n")
-    val p = parse(s"GET / HTTP/1.1\r\n$headers\r\n\r\n")
+    val p = parse(s"GET / HTTP/1.1\r\nHost: h\r\n$headers\r\n\r\n")
     assert(p.isFinal)
-    assert(p.headers.size == 20)
+    assert(p.headers.size == 21)
     assert(p.headers("X-Header-1") == "value-1")
     assert(p.headers("X-Header-20") == "value-20")
   }
 
   test("header with no space before value") {
-    val p = parse("GET / HTTP/1.1\r\nX-Test:value\r\n\r\n")
+    val p = parse("GET / HTTP/1.1\r\nHost: h\r\nX-Test:value\r\n\r\n")
     assert(p.isFinal)
     assert(p.headers("X-Test") == "value")
   }
 
   test("header with empty value after colon and space") {
-    val p = parse("GET / HTTP/1.1\r\nX-Empty: \r\n\r\n")
+    val p = parse("GET / HTTP/1.1\r\nHost: h\r\nX-Empty: \r\n\r\n")
     assert(p.isFinal)
     assert(p.headers("X-Empty") == "")
   }
 
   test("header with empty value after colon no space") {
-    val p = parse("GET / HTTP/1.1\r\nX-Empty:\r\n\r\n")
+    val p = parse("GET / HTTP/1.1\r\nHost: h\r\nX-Empty:\r\n\r\n")
     assert(p.isFinal)
     assert(p.headers("X-Empty") == "")
   }
 
   test("no headers (just blank line)") {
-    val p = parse("GET / HTTP/1.1\r\n\r\n")
+    val p = parse("GET / HTTP/1.0\r\n\r\n")
     assert(p.isFinal)
     assert(p.headers.isEmpty)
   }
 
   test("Content-Type header preserved exactly") {
-    val p = parse("GET / HTTP/1.1\r\nContent-Type: application/json; charset=utf-8\r\n\r\n")
+    val p = parse("GET / HTTP/1.1\r\nHost: h\r\nContent-Type: application/json; charset=utf-8\r\n\r\n")
     assert(p.isFinal)
     assert(p.headers("Content-Type") == "application/json; charset=utf-8")
   }
@@ -258,21 +258,21 @@ class HTTPRequestParserTests extends AnyFunSuite:
   }
 
   test("body with exact Content-Length") {
-    val p = parse("POST / HTTP/1.1\r\nContent-Length: 5\r\n\r\nhello")
+    val p = parse("POST / HTTP/1.1\r\nHost: h\r\nContent-Length: 5\r\n\r\nhello")
     assert(p.isFinal)
     assert(new String(p.body.toArray) == "hello")
   }
 
   test("large body") {
     val body = "x" * 10000
-    val p = parse(s"POST / HTTP/1.1\r\nContent-Length: ${body.length}\r\n\r\n$body")
+    val p = parse(s"POST / HTTP/1.1\r\nHost: h\r\nContent-Length: ${body.length}\r\n\r\n$body")
     assert(p.isFinal)
     assert(p.body.length == 10000)
     assert(new String(p.body.toArray) == body)
   }
 
   test("body with binary content") {
-    val header = "POST / HTTP/1.1\r\nContent-Length: 4\r\n\r\n"
+    val header = "POST / HTTP/1.1\r\nHost: h\r\nContent-Length: 4\r\n\r\n"
     val headerBytes = header.getBytes("ASCII")
     val bodyBytes = Array[Byte](0x00, 0x01, 0xff.toByte, 0x7f)
     val p = parseBytes(headerBytes ++ bodyBytes)
@@ -286,14 +286,14 @@ class HTTPRequestParserTests extends AnyFunSuite:
 
   test("body with newlines in content") {
     val body = "line1\r\nline2\r\n"
-    val p = parse(s"POST / HTTP/1.1\r\nContent-Length: ${body.length}\r\n\r\n$body")
+    val p = parse(s"POST / HTTP/1.1\r\nHost: h\r\nContent-Length: ${body.length}\r\n\r\n$body")
     assert(p.isFinal)
     assert(new String(p.body.toArray) == body)
   }
 
   test("JSON body") {
     val body = """{"key":"value","num":42}"""
-    val p = parse(s"POST /api HTTP/1.1\r\nContent-Type: application/json\r\nContent-Length: ${body.length}\r\n\r\n$body")
+    val p = parse(s"POST /api HTTP/1.1\r\nHost: h\r\nContent-Type: application/json\r\nContent-Length: ${body.length}\r\n\r\n$body")
     assert(p.isFinal)
     assert(new String(p.body.toArray) == body)
     assert(p.headers("Content-Type") == "application/json")
@@ -301,7 +301,7 @@ class HTTPRequestParserTests extends AnyFunSuite:
 
   test("form-encoded body") {
     val body = "username=alice&password=secret"
-    val p = parse(s"POST /login HTTP/1.1\r\nContent-Length: ${body.length}\r\n\r\n$body")
+    val p = parse(s"POST /login HTTP/1.1\r\nHost: h\r\nContent-Length: ${body.length}\r\n\r\n$body")
     assert(p.isFinal)
     assert(new String(p.body.toArray) == body)
   }
@@ -314,7 +314,7 @@ class HTTPRequestParserTests extends AnyFunSuite:
 
   test("incomplete body does not reach FINAL") {
     val parser = new HTTPRequestParser
-    val raw = "POST / HTTP/1.1\r\nContent-Length: 10\r\n\r\nhello"
+    val raw = "POST / HTTP/1.1\r\nHost: h\r\nContent-Length: 10\r\n\r\nhello"
     raw.foreach(c => parser.send(c.toInt))
     assert(!parser.isFinal)
     assert(parser.body.length == 5)
@@ -322,7 +322,7 @@ class HTTPRequestParserTests extends AnyFunSuite:
 
   test("body completes exactly at Content-Length") {
     val parser = new HTTPRequestParser
-    val header = "POST / HTTP/1.1\r\nContent-Length: 3\r\n\r\n"
+    val header = "POST / HTTP/1.1\r\nHost: h\r\nContent-Length: 3\r\n\r\n"
     header.foreach(c => parser.send(c.toInt))
     assert(!parser.isFinal)
 
@@ -369,18 +369,17 @@ class HTTPRequestParserTests extends AnyFunSuite:
     p.reset()
     assert(!p.isFinal)
 
-    "GET /second HTTP/1.1\r\nAccept: */*\r\n\r\n".foreach(c => p.send(c.toInt))
+    "GET /second HTTP/1.1\r\nHost: h\r\nAccept: */*\r\n\r\n".foreach(c => p.send(c.toInt))
     assert(p.isFinal)
     assert(p.method == "GET")
     assert(p.path == "/second")
-    assert(!p.headers.contains("Host"))
     assert(p.headers("Accept") == "*/*")
     assert(p.body.isEmpty)
     assert(p.query.isEmpty)
   }
 
   test("reset after Content-Length 0") {
-    val p = parse("POST / HTTP/1.1\r\nContent-Length: 0\r\n\r\n")
+    val p = parse("POST / HTTP/1.1\r\nHost: h\r\nContent-Length: 0\r\n\r\n")
     assert(p.isFinal)
 
     p.reset()
@@ -493,27 +492,27 @@ class HTTPRequestParserTests extends AnyFunSuite:
   }
 
   test("path is just /") {
-    val p = parse("GET / HTTP/1.1\r\n\r\n")
+    val p = parse("GET / HTTP/1.1\r\nHost: localhost\r\n\r\n")
     assert(p.isFinal)
     assert(p.path == "/")
   }
 
   test("query string with no path change") {
-    val p = parse("GET /?key=val HTTP/1.1\r\n\r\n")
+    val p = parse("GET /?key=val HTTP/1.1\r\nHost: localhost\r\n\r\n")
     assert(p.isFinal)
     assert(p.path == "/")
     assert(p.query.toMap == Map("key" -> "val"))
   }
 
   test("query parameters with duplicate keys preserved in list") {
-    val p = parse("GET /?a=1&a=2&a=3 HTTP/1.1\r\n\r\n")
+    val p = parse("GET /?a=1&a=2&a=3 HTTP/1.1\r\nHost: localhost\r\n\r\n")
     assert(p.isFinal)
     val vals = p.query.filter(_._1 == "a").map(_._2).toList
     assert(vals == List("1", "2", "3"))
   }
 
   test("Content-Length 1") {
-    val p = parse("POST / HTTP/1.1\r\nContent-Length: 1\r\n\r\nx")
+    val p = parse("POST / HTTP/1.1\r\nHost: h\r\nContent-Length: 1\r\n\r\nx")
     assert(p.isFinal)
     assert(new String(p.body.toArray) == "x")
   }
@@ -564,7 +563,7 @@ class HTTPRequestParserTests extends AnyFunSuite:
     parser.reset()
 
     // Request 2
-    "POST /two HTTP/1.1\r\nContent-Length: 2\r\n\r\nhi".foreach(c => parser.send(c.toInt))
+    "POST /two HTTP/1.1\r\nHost: h\r\nContent-Length: 2\r\n\r\nhi".foreach(c => parser.send(c.toInt))
     assert(parser.isFinal)
     assert(parser.path == "/two")
     assert(new String(parser.body.toArray) == "hi")
@@ -581,68 +580,68 @@ class HTTPRequestParserTests extends AnyFunSuite:
 
   test("reject non-numeric Content-Length") {
     assertThrows[RuntimeException] {
-      parse("POST / HTTP/1.1\r\nContent-Length: abc\r\n\r\n")
+      parse("POST / HTTP/1.1\r\nHost: h\r\nContent-Length: abc\r\n\r\n")
     }
   }
 
   test("reject Content-Length with mixed content") {
     assertThrows[RuntimeException] {
-      parse("POST / HTTP/1.1\r\nContent-Length: 5abc\r\n\r\n")
+      parse("POST / HTTP/1.1\r\nHost: h\r\nContent-Length: 5abc\r\n\r\n")
     }
   }
 
   test("reject negative Content-Length") {
     assertThrows[RuntimeException] {
-      parse("POST / HTTP/1.1\r\nContent-Length: -1\r\n\r\n")
+      parse("POST / HTTP/1.1\r\nHost: h\r\nContent-Length: -1\r\n\r\n")
     }
   }
 
   test("reject empty Content-Length value") {
     assertThrows[RuntimeException] {
-      parse("POST / HTTP/1.1\r\nContent-Length: \r\n\r\n")
+      parse("POST / HTTP/1.1\r\nHost: h\r\nContent-Length: \r\n\r\n")
     }
   }
 
   test("reject Content-Length exceeding max body size") {
     assertThrows[RuntimeException] {
-      parse("POST / HTTP/1.1\r\nContent-Length: 10485761\r\n\r\n")
+      parse("POST / HTTP/1.1\r\nHost: h\r\nContent-Length: 10485761\r\n\r\n")
     }
   }
 
   test("accept Content-Length at max body size boundary") {
     val parser = new HTTPRequestParser
-    "POST / HTTP/1.1\r\nContent-Length: 10485760\r\n\r\n".foreach(c => parser.send(c.toInt))
+    "POST / HTTP/1.1\r\nHost: h\r\nContent-Length: 10485760\r\n\r\n".foreach(c => parser.send(c.toInt))
     // Should not throw - just won't be final because we haven't sent the body
     assert(!parser.isFinal)
   }
 
   test("reject Content-Length with huge number (overflow)") {
     assertThrows[RuntimeException] {
-      parse("POST / HTTP/1.1\r\nContent-Length: 99999999999999999999\r\n\r\n")
+      parse("POST / HTTP/1.1\r\nHost: h\r\nContent-Length: 99999999999999999999\r\n\r\n")
     }
   }
 
   test("Content-Length with leading whitespace accepted") {
-    val p = parse("POST / HTTP/1.1\r\nContent-Length:  5\r\n\r\nhello")
+    val p = parse("POST / HTTP/1.1\r\nHost: h\r\nContent-Length:  5\r\n\r\nhello")
     assert(p.isFinal)
     assert(new String(p.body.toArray) == "hello")
   }
 
   test("Content-Length with trailing whitespace accepted") {
-    val p = parse("POST / HTTP/1.1\r\nContent-Length: 5 \r\n\r\nhello")
+    val p = parse("POST / HTTP/1.1\r\nHost: h\r\nContent-Length: 5 \r\n\r\nhello")
     assert(p.isFinal)
     assert(new String(p.body.toArray) == "hello")
   }
 
   test("Content-Length with leading and trailing whitespace accepted") {
-    val p = parse("POST / HTTP/1.1\r\nContent-Length:   3  \r\n\r\nabc")
+    val p = parse("POST / HTTP/1.1\r\nHost: h\r\nContent-Length:   3  \r\n\r\nabc")
     assert(p.isFinal)
     assert(new String(p.body.toArray) == "abc")
   }
 
   test("reject Content-Length with only whitespace") {
     assertThrows[RuntimeException] {
-      parse("POST / HTTP/1.1\r\nContent-Length:   \r\n\r\n")
+      parse("POST / HTTP/1.1\r\nHost: h\r\nContent-Length:   \r\n\r\n")
     }
   }
 
@@ -691,7 +690,8 @@ class HTTPRequestParserTests extends AnyFunSuite:
   }
 
   test("accept version at max length") {
-    val version = "A" * 16
+    val version = "HTTP/12345.12345"
+    assert(version.length == 16)
     val p = parse(s"GET / $version\r\nHost: localhost\r\n\r\n")
     assert(p.isFinal)
     assert(p.version == version)
@@ -706,7 +706,7 @@ class HTTPRequestParserTests extends AnyFunSuite:
 
   test("accept header name at max length") {
     val key = "X" * 256
-    val p = parse(s"GET / HTTP/1.1\r\n$key: value\r\n\r\n")
+    val p = parse(s"GET / HTTP/1.1\r\nHost: h\r\n$key: value\r\n\r\n")
     assert(p.isFinal)
     assert(p.headers(key) == "value")
   }
@@ -720,7 +720,7 @@ class HTTPRequestParserTests extends AnyFunSuite:
 
   test("accept header value at max length") {
     val value = "v" * 8192
-    val p = parse(s"GET / HTTP/1.1\r\nX-Test: $value\r\n\r\n")
+    val p = parse(s"GET / HTTP/1.1\r\nHost: h\r\nX-Test: $value\r\n\r\n")
     assert(p.isFinal)
     assert(p.headers("X-Test") == value)
   }
@@ -733,8 +733,8 @@ class HTTPRequestParserTests extends AnyFunSuite:
   }
 
   test("accept exactly max headers") {
-    val headers = (1 to 100).map(i => s"X-H-$i: v$i").mkString("\r\n")
-    val p = parse(s"GET / HTTP/1.1\r\n$headers\r\n\r\n")
+    val headers = (1 to 99).map(i => s"X-H-$i: v$i").mkString("\r\n")
+    val p = parse(s"GET / HTTP/1.1\r\nHost: h\r\n$headers\r\n\r\n")
     assert(p.isFinal)
     assert(p.headers.size == 100)
   }
@@ -751,4 +751,155 @@ class HTTPRequestParserTests extends AnyFunSuite:
     val p = parse(s"GET /?$key=v HTTP/1.1\r\nHost: localhost\r\n\r\n")
     assert(p.isFinal)
     assert(p.query.toMap == Map(key -> "v"))
+  }
+
+  // --- Transfer-Encoding rejection ---
+
+  test("reject Transfer-Encoding: chunked") {
+    assertThrows[RuntimeException] {
+      parse("POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n")
+    }
+  }
+
+  test("reject Transfer-Encoding: gzip") {
+    assertThrows[RuntimeException] {
+      parse("POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: gzip\r\n\r\n")
+    }
+  }
+
+  test("reject request with both Content-Length and Transfer-Encoding") {
+    assertThrows[RuntimeException] {
+      parse("POST / HTTP/1.1\r\nHost: h\r\nContent-Length: 5\r\nTransfer-Encoding: chunked\r\n\r\nhello")
+    }
+  }
+
+  // --- HTTP version validation ---
+
+  test("reject version without HTTP/ prefix") {
+    assertThrows[RuntimeException] {
+      parse("GET / BLAH/1.1\r\nHost: localhost\r\n\r\n")
+    }
+  }
+
+  test("reject version without dot") {
+    assertThrows[RuntimeException] {
+      parse("GET / HTTP/11\r\nHost: localhost\r\n\r\n")
+    }
+  }
+
+  test("reject version with non-digit major") {
+    assertThrows[RuntimeException] {
+      parse("GET / HTTP/x.1\r\nHost: localhost\r\n\r\n")
+    }
+  }
+
+  test("reject version with non-digit minor") {
+    assertThrows[RuntimeException] {
+      parse("GET / HTTP/1.x\r\nHost: localhost\r\n\r\n")
+    }
+  }
+
+  test("reject version with empty major") {
+    assertThrows[RuntimeException] {
+      parse("GET / HTTP/.1\r\nHost: localhost\r\n\r\n")
+    }
+  }
+
+  test("reject version with empty minor") {
+    assertThrows[RuntimeException] {
+      parse("GET / HTTP/1.\r\nHost: localhost\r\n\r\n")
+    }
+  }
+
+  test("accept HTTP/1.0") {
+    val p = parse("GET / HTTP/1.0\r\n\r\n")
+    assert(p.isFinal)
+    assert(p.version == "HTTP/1.0")
+  }
+
+  test("accept HTTP/2.0") {
+    val p = parse("GET / HTTP/2.0\r\nHost: localhost\r\n\r\n")
+    assert(p.isFinal)
+    assert(p.version == "HTTP/2.0")
+  }
+
+  // --- Control character rejection ---
+
+  test("reject NUL in method") {
+    assertThrows[RuntimeException] {
+      parse("GE\u0000T / HTTP/1.1\r\nHost: h\r\n\r\n")
+    }
+  }
+
+  test("reject control char in path") {
+    assertThrows[RuntimeException] {
+      parse("GET /he\u0001llo HTTP/1.1\r\nHost: h\r\n\r\n")
+    }
+  }
+
+  test("reject DEL in method") {
+    assertThrows[RuntimeException] {
+      parse("GE\u007FT / HTTP/1.1\r\nHost: h\r\n\r\n")
+    }
+  }
+
+  test("reject control char in header name") {
+    assertThrows[RuntimeException] {
+      parse("GET / HTTP/1.1\r\nX\u0002Test: value\r\n\r\n")
+    }
+  }
+
+  test("reject control char in header value") {
+    assertThrows[RuntimeException] {
+      parse("GET / HTTP/1.1\r\nHost: h\r\nX-Test: val\u0003ue\r\n\r\n")
+    }
+  }
+
+  test("accept HTAB in header value") {
+    val p = parse("GET / HTTP/1.1\r\nHost: h\r\nX-Test: val\tue\r\n\r\n")
+    assert(p.isFinal)
+    assert(p.headers("X-Test") == "val\tue")
+  }
+
+  test("reject control char in query key") {
+    assertThrows[RuntimeException] {
+      parse("GET /?ke\u0004y=val HTTP/1.1\r\nHost: h\r\n\r\n")
+    }
+  }
+
+  test("reject control char in query value") {
+    assertThrows[RuntimeException] {
+      parse("GET /?key=va\u0005l HTTP/1.1\r\nHost: h\r\n\r\n")
+    }
+  }
+
+  test("reject control char in version") {
+    assertThrows[RuntimeException] {
+      parse("GET / HTTP/1\u0006.1\r\nHost: h\r\n\r\n")
+    }
+  }
+
+  // --- Host header requirement ---
+
+  test("reject HTTP/1.1 without Host header") {
+    assertThrows[RuntimeException] {
+      parse("GET / HTTP/1.1\r\n\r\n")
+    }
+  }
+
+  test("accept HTTP/1.0 without Host header") {
+    val p = parse("GET / HTTP/1.0\r\n\r\n")
+    assert(p.isFinal)
+  }
+
+  test("reject HTTP/1.1 with only non-Host headers") {
+    assertThrows[RuntimeException] {
+      parse("GET / HTTP/1.1\r\nAccept: */*\r\n\r\n")
+    }
+  }
+
+  test("accept HTTP/1.1 with Host header") {
+    val p = parse("GET / HTTP/1.1\r\nHost: example.com\r\n\r\n")
+    assert(p.isFinal)
+    assert(p.headers("Host") == "example.com")
   }

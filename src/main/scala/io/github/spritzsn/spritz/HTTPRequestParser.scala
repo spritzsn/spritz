@@ -36,6 +36,8 @@ class HTTPRequestParser extends Machine:
 
   def badRequest: Nothing = sys.error("bad request")
 
+  private def isControl(b: Int): Boolean = b <= 0x1F || b == 0x7F
+
   private def urlAcc(c: Int): Unit =
     if url.length >= MaxUrlLen then badRequest
     url += c.toChar
@@ -56,7 +58,9 @@ class HTTPRequestParser extends Machine:
         method = buf.toString
         transition(pathState)
       case '\r' | '\n' => badRequest
-      case b           => acc(b)
+      case b =>
+        if isControl(b) then badRequest
+        acc(b)
     }
 
   case object pathState extends NonEmptyAccState(MaxUrlLen):
@@ -70,6 +74,7 @@ class HTTPRequestParser extends Machine:
         transition(queryKeyState)
       case '\r' | '\n' => badRequest
       case b =>
+        if isControl(b) then badRequest
         urlAcc(b)
         acc(b)
     }
@@ -85,6 +90,7 @@ class HTTPRequestParser extends Machine:
         transition(queryValueState)
       case '&' => badRequest
       case c =>
+        if isControl(c) then badRequest
         urlAcc(c)
         acc(c)
     }
@@ -100,6 +106,7 @@ class HTTPRequestParser extends Machine:
         transition(queryKeyState)
       case '\r' | '=' | '\n' => badRequest
       case c =>
+        if isControl(c) then badRequest
         urlAcc(c)
         acc(c)
     }
@@ -108,9 +115,12 @@ class HTTPRequestParser extends Machine:
     def on = {
       case '\r' =>
         version = buf.toString
+        if !version.matches("HTTP/\\d+\\.\\d+") then badRequest
         transition(value2keyState)
       case '\n' => badRequest
-      case b    => acc(b)
+      case b =>
+        if isControl(b) then badRequest
+        acc(b)
     }
 
   case object headerValueState extends AccState(MaxHeaderValueLen):
@@ -119,7 +129,9 @@ class HTTPRequestParser extends Machine:
         headers(key) = buf.toString
         transition(value2keyState)
       case '\n' => badRequest
-      case b    => acc(b)
+      case b =>
+        if isControl(b) && b != '\t' then badRequest
+        acc(b)
     }
 
   case object value2keyState extends State:
@@ -137,14 +149,19 @@ class HTTPRequestParser extends Machine:
         key = buf.toString
         transition(key2valueState)
       case '\n' => badRequest
-      case b    => acc(b)
+      case b =>
+        if isControl(b) then badRequest
+        acc(b)
     }
 
   case object blankState extends State:
     def on = {
-      case '\n' if headers contains "Content-Length" => transition(bodyState)
-      case '\n'                                      => transition(FINAL)
-      case _                                         => badRequest
+      case '\n' =>
+        if headers.contains("Transfer-Encoding") then badRequest
+        if version == "HTTP/1.1" && !headers.contains("Host") then badRequest
+        if headers.contains("Content-Length") then transition(bodyState)
+        else transition(FINAL)
+      case _ => badRequest
     }
 
   case object bodyState extends State:
