@@ -32,7 +32,7 @@ Spritz provides a familiar routing and middleware API for building HTTP servers 
 Add to your `build.sbt`:
 
 ```scala
-libraryDependencies += "io.github.edadma" %%% "spritz" % "0.0.48"
+libraryDependencies += "io.github.edadma" %%% "spritz" % "0.1.0"
 ```
 
 ### Hello World
