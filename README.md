@@ -46,9 +46,8 @@ import io.github.spritzsn.spritz.*
   app.get("/") { (req, res) =>
     res.send("Hello, World!")
   }
-  app.listen(3000)
   println("Listening on port 3000")
-  app.run()
+  app.listen(3000)
 ```
 
 ### JSON API
@@ -64,7 +63,6 @@ import io.github.spritzsn.spritz.*
     res.json(Map("id" -> id, "name" -> "Alice"))
   }
   app.listen(3000)
-  app.run()
 ```
 
 ### Middleware
@@ -84,7 +82,6 @@ import io.github.spritzsn.spritz.*
     res.send("Hello!")
   }
   app.listen(3000)
-  app.run()
 ```
 
 ## Building

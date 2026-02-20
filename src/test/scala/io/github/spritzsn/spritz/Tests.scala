@@ -1,7 +1,7 @@
 package io.github.spritzsn.spritz
 
 import org.scalatest.funsuite.AnyFunSuite
-import scala.collection.immutable
+import scala.collection.mutable
 
 class HTTPRequestParserTests extends AnyFunSuite:
   private def parse(raw: String): HTTPRequestParser =
@@ -447,7 +447,7 @@ class RouterTests extends AnyFunSuite:
       method: Method = "GET",
       path: String = "/",
       query: DMap = new DMap,
-      headers: immutable.Map[String, String] = immutable.Map.empty,
+      headers: mutable.Map[String, String] = mutable.Map.empty,
       body: Array[Byte] = Array.empty,
   ): Request =
     new Request(method, path, path, query, "HTTP/1.1", headers, new DMap, body, "127.0.0.1", "localhost")
@@ -634,10 +634,20 @@ class RouterTests extends AnyFunSuite:
   }
 
   test("handler receives headers") {
-    val headers = immutable.Map("Authorization" -> "Bearer token123")
+    val headers = mutable.Map("Authorization" -> "Bearer token123")
     val req = makeRequest(headers = headers)
 
     assert(req.get("Authorization") == Some("Bearer token123"))
+  }
+
+  test("case-insensitive header lookup with TreeMap") {
+    val headers = new mutable.TreeMap[String, String]()(using Ordering.by(_.toLowerCase))
+    headers("Content-Type") = "application/json"
+    val req = makeRequest(headers = headers)
+
+    assert(req.get("content-type") == Some("application/json"))
+    assert(req.get("CONTENT-TYPE") == Some("application/json"))
+    assert(req.get("Content-Type") == Some("application/json"))
   }
 
   test("handler receives body") {

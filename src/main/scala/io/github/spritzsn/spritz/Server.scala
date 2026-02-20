@@ -1,7 +1,6 @@
 package io.github.spritzsn.spritz
 
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
-import scala.collection.{immutable, mutable}
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import io.github.spritzsn.libuv.*
@@ -16,25 +15,6 @@ class Server(serverName: String = null) extends Router:
       res.setIfNot("Server", serverName)
       HandlerResult.Next
     }
-
-  def run(): Unit =
-    use { (req: Request, res: Response) =>
-      res
-        .status(404)
-        .send(s"""
-           |<!DOCTYPE html>
-           |<html>
-           |  <head>
-           |    <title>404 Not Found</title>
-           |  </head>
-           |  <body>
-           |    <h1>404 Not Found</h1>
-           |    <p>no matching routes for path '<code>${req.originalPath}</code>'</p>
-           |  </body>
-           |</html>
-           |""".stripMargin)
-    }
-    async.loop.run()
 
   private def connectionCallback(server: TCP, status: Int): Unit =
     if status < 0 then Console.err.println(s"connection error: ${strError(status)}")
@@ -88,10 +68,28 @@ class Server(serverName: String = null) extends Router:
     else if closeSocket then close(client)
 
   def listen(port: Int, flags: Int = 0, backlog: Int = 4096): Unit =
+    use { (req: Request, res: Response) =>
+      res
+        .status(404)
+        .send(s"""
+             |<!DOCTYPE html>
+             |<html>
+             |  <head>
+             |    <title>404 Not Found</title>
+             |  </head>
+             |  <body>
+             |    <h1>404 Not Found</h1>
+             |    <p>no matching routes for path '<code>${req.originalPath}</code>'</p>
+             |  </body>
+             |</html>
+             |""".stripMargin)
+    }
+
     val server = defaultLoop.tcp
 
     server.bind("0.0.0.0", port, flags)
     server.listen(backlog, connectionCallback)
+    async.loop.run()
 
   def process(httpreq: HTTPRequestParser, client: TCP): Future[Response] =
     val query = new DMap
@@ -114,8 +112,7 @@ class Server(serverName: String = null) extends Router:
         httpreq.url.toString,
         query,
         httpreq.version,
-        new immutable.TreeMap[String, String]()(using Ordering.by(_.toLowerCase)) ++
-          httpreq.headers,
+        httpreq.headers,
         new DMap,
         httpreq.body.toArray,
         client.getPeerName,
