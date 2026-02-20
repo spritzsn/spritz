@@ -1,8 +1,8 @@
 # spritz
 
 ![Maven Central](https://img.shields.io/maven-central/v/io.github.edadma/spritz_native0.5_3)
-[![Last Commit](https://img.shields.io/github/last-commit/edadma/spritz)](https://github.com/edadma/spritz/commits)
-![GitHub](https://img.shields.io/github/license/edadma/spritz)
+[![Last Commit](https://img.shields.io/github/last-commit/spritzsn/spritz)](https://github.com/spritzsn/spritz/commits)
+![GitHub](https://img.shields.io/github/license/spritzsn/spritz)
 ![Scala Version](https://img.shields.io/badge/Scala-3.8.1-blue.svg)
 ![Scala Native Version](https://img.shields.io/badge/Scala_Native-0.5.10-blue.svg)
 
